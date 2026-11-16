@@ -1,0 +1,212 @@
+@import 'tailwindcss';
+
+/*
+ * Palet "Rimba Emas"
+ * Rimba (hijau hutan gelap) memberi kesan megah dan tenang. Dua warna aksen selalu bermakna:
+ * daun = organik, emas = anorganik, sama seperti dua tong di logo.
+ */
+@theme {
+  --color-rimba-950: #061a16;
+  --color-rimba-900: #0b2b26;
+  --color-rimba-800: #113a33;
+  --color-rimba-700: #1a4c43;
+  --color-rimba-600: #2b6357;
+
+  --color-daun: #3fbf77;
+  --color-daun-terang: #8cebb3;
+  --color-daun-tua: #1f7a4d;
+  --color-mint: #e4f4ea;
+
+  --color-emas: #ffc247;
+  --color-emas-terang: #ffe08f;
+  --color-emas-tua: #a86f00;
+  --color-krem: #fff4d6;
+
+  --color-kertas: #f4f8f3;
+  --color-garis: #d3e3d8;
+  --color-teks: #0b2b26;
+  --color-redup: #4b6a62;
+  --color-koral: #d93f45;
+
+  --font-display: 'Poppins', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Inter Variable', 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+  --shadow-lembut: 0 1px 2px rgb(11 43 38 / 0.06), 0 8px 24px rgb(11 43 38 / 0.07);
+  --shadow-angkat: 0 2px 4px rgb(11 43 38 / 0.06), 0 22px 48px rgb(11 43 38 / 0.16);
+
+  --ease-keluar: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-pegas: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --animate-masuk: masuk 0.5s var(--ease-keluar) both;
+  --animate-pindai: pindai 1.4s ease-in-out infinite;
+  --animate-melayang: melayang 5s ease-in-out infinite;
+  --animate-goyang: goyang 0.45s ease-in-out;
+}
+
+@keyframes masuk {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes pindai {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  15%,
+  85% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(400%);
+    opacity: 0;
+  }
+}
+@keyframes melayang {
+  0%,
+  100% {
+    transform: translateY(0) rotate(var(--rot, 0deg));
+  }
+  50% {
+    transform: translateY(-9px) rotate(calc(var(--rot, 0deg) + 3deg));
+  }
+}
+@keyframes goyang {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-8px);
+  }
+  40% {
+    transform: translateX(7px);
+  }
+  60% {
+    transform: translateX(-5px);
+  }
+  80% {
+    transform: translateX(3px);
+  }
+}
+
+@layer base {
+  html {
+    background: var(--color-kertas);
+    color: var(--color-teks);
+    font-family: var(--font-sans);
+    -webkit-text-size-adjust: 100%;
+    scroll-padding-top: 5.5rem;
+  }
+  body {
+    min-height: 100dvh;
+    margin: 0;
+    background: var(--color-kertas);
+    -webkit-tap-highlight-color: transparent;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: clip;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    text-wrap: balance;
+  }
+  p,
+  li {
+    text-wrap: pretty;
+  }
+  :focus-visible {
+    outline: 3px solid var(--color-emas);
+    outline-offset: 3px;
+    border-radius: 0.6rem;
+  }
+  ::selection {
+    background: var(--color-emas);
+    color: var(--color-rimba-900);
+  }
+  button {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+}
+
+@layer components {
+  /* Kilau yang menyapu tombol saat disorot. */
+  .kilau {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+  }
+  .kilau::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / 0.38) 50%, transparent 70%);
+    transform: translateX(-110%);
+    transition: transform 0.7s var(--ease-keluar);
+  }
+  .kilau:hover::after {
+    transform: translateX(110%);
+  }
+
+  /* Elemen yang muncul saat masuk layar. Atribut data-tampak dipasang oleh <Reveal>. */
+  .muncul {
+    opacity: 0;
+    transform: translateY(18px);
+    transition:
+      opacity 0.6s var(--ease-keluar),
+      transform 0.6s var(--ease-keluar);
+    transition-delay: var(--tunda, 0ms);
+  }
+  .muncul[data-tampak='1'] {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* Pola titik halus untuk latar gelap. */
+  .pola-titik {
+    background-image: radial-gradient(rgb(140 235 179 / 0.13) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+
+  .angka {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .halaman-masuk {
+    animation: masuk 0.45s var(--ease-keluar) both;
+  }
+}
+
+/* Tutup tong berputar pada engselnya. Sudut diatur lewat --tutup. */
+.tutup-tong {
+  transform-box: fill-box;
+  transform: rotate(var(--tutup, 0deg));
+  transition: transform var(--tutup-durasi, 0.55s) var(--tutup-ease, var(--ease-pegas));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .muncul {
+    opacity: 1;
+    transform: none;
+  }
+}

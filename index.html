@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0B2B26" />
+    <title>PILAH · Pilih Langkah Bijak untuk Sampah</title>
+    <meta
+      name="description"
+      content="Foto sampahmu, PILAH memberi tahu apakah itu organik atau anorganik. CNN berjalan langsung di perangkatmu, foto tidak diunggah ke server."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="PILAH · Pilih Langkah Bijak untuk Sampah" />
+    <meta
+      property="og:description"
+      content="Foto sampahmu, kenali jenisnya. Klasifikasi organik dan anorganik dengan CNN, langsung di browser."
+    />
+    <meta property="og:image" content="/og.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <style>
+      /* Latar awal sebelum CSS dimuat, agar tidak berkedip putih di bawah splash. */
+      html { background: #0b2b26; }
+    </style>
+  </head>
+  <body>
+    <noscript>
+      <p style="padding:2rem;font-family:system-ui">PILAH membutuhkan JavaScript untuk menjalankan model di browser.</p>
+    </noscript>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
