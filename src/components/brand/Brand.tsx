@@ -21,15 +21,7 @@ export function Wordmark({ className }: { className?: string }) {
   )
 }
 
-/** Slogan dengan "Pil" dan "ah" disorot emas: dari dua potongan itulah nama PILAH terbentuk. */
-export function Slogan({ className, highlight = true }: { className?: string; highlight?: boolean }) {
-  const [a, mid, b] = BRAND.sloganParts
-  const mark = highlight ? 'rounded-[4px] bg-emas px-[2px] text-rimba-900' : ''
-  return (
-    <span className={className}>
-      <span className={mark}>{a}</span>
-      {mid}
-      <span className={mark}>{b}</span>
-    </span>
-  )
+/** Slogan PILAH, ditulis apa adanya tanpa sorotan. */
+export function Slogan({ className }: { className?: string }) {
+  return <span className={className}>{BRAND.slogan}</span>
 }

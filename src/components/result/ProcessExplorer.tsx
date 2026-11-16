@@ -33,16 +33,21 @@ function InputStep({ r }: { r: Classification }) {
   return (
     <div className="grid gap-8 md:grid-cols-[auto_1fr] md:items-center">
       <div
-        className="relative w-56 cursor-crosshair overflow-hidden rounded-2xl ring-1 ring-garis sm:w-64"
+        className="relative w-56 cursor-crosshair overflow-hidden rounded-2xl ring-1 ring-white/10 sm:w-64"
         onPointerMove={onMove}
         onPointerLeave={() => setHover(null)}
         data-testid="input-map"
       >
-        <MapCanvas data={gray} side={size} label="Matriks input 64 × 64" className="aspect-square w-full" />
+        <MapCanvas
+          data={gray}
+          side={size}
+          label="Matriks input 64 × 64"
+          className="aspect-square w-full"
+        />
         {hover && (
           <span
             aria-hidden
-            className="pointer-events-none absolute ring-2 ring-emas"
+            className="ring-emas pointer-events-none absolute ring-2"
             style={{
               left: `${(hover.j / size) * 100}%`,
               top: `${(hover.i / size) * 100}%`,
@@ -53,13 +58,13 @@ function InputStep({ r }: { r: Classification }) {
         )}
       </div>
       <div>
-        <p className="leading-relaxed text-redup">
+        <p className="text-redup leading-relaxed">
           Foto diperkecil menjadi 64 × 64 piksel, diubah ke grayscale dengan{' '}
-          <span className="whitespace-nowrap font-medium text-teks">0,299R + 0,587G + 0,114B</span>,
+          <span className="text-teks font-medium whitespace-nowrap">0,299R + 0,587G + 0,114B</span>,
           lalu setiap nilai dibagi 255. Inilah satu-satunya yang dilihat model: 4.096 angka antara 0
           dan 1.
         </p>
-        <div className="mt-5 rounded-2xl bg-mint/70 p-4 text-sm" aria-live="polite">
+        <div className="mt-5 rounded-2xl bg-white/[0.05] p-4 text-sm" aria-live="polite">
           {hover && v !== null ? (
             <p className="angka">
               Piksel baris {hover.i + 1}, kolom {hover.j + 1}: grayscale{' '}
@@ -67,7 +72,9 @@ function InputStep({ r }: { r: Classification }) {
               <strong>{fmt(v, 4)}</strong>
             </p>
           ) : (
-            <p className="text-redup">Arahkan kursor atau jari ke gambar untuk melihat nilai tiap piksel.</p>
+            <p className="text-redup">
+              Arahkan kursor atau jari ke gambar untuk melihat nilai tiap piksel.
+            </p>
           )}
         </div>
       </div>
@@ -82,9 +89,13 @@ function KernelGrid({ k }: { k: Float32Array }) {
       {Array.from(k).map((w, i) => (
         <span
           key={i}
-          className="grid size-14 place-items-center rounded-lg text-xs font-semibold angka"
+          className="angka grid size-14 place-items-center rounded-lg text-xs font-semibold"
           style={{
-            background: w >= 0 ? `rgb(255 194 71 / ${0.15 + (0.75 * w) / max})` : `rgb(120 200 230 / ${0.15 + (0.75 * -w) / max})`,
+            background:
+              w >= 0
+                ? `rgb(255 194 71 / ${0.12 + (0.78 * w) / max})`
+                : `rgb(120 200 230 / ${0.12 + (0.78 * -w) / max})`,
+            color: Math.abs(w) / max > 0.45 ? '#03110d' : '#ecf6f0',
           }}
         >
           {fmt(w, 2)}
@@ -94,7 +105,15 @@ function KernelGrid({ k }: { k: Float32Array }) {
   )
 }
 
-function MapsStep({ r, pooled, weights }: { r: Classification; pooled: boolean; weights: ModelWeights | null }) {
+function MapsStep({
+  r,
+  pooled,
+  weights,
+}: {
+  r: Classification
+  pooled: boolean
+  weights: ModelWeights | null
+}) {
   const [sel, setSel] = useState(0)
   const maps = pooled ? r.trace.P : r.trace.R
   const side = pooled ? r.trace.size / 2 : r.trace.size
@@ -118,17 +137,25 @@ function MapsStep({ r, pooled, weights }: { r: Classification; pooled: boolean; 
               aria-label={`Kernel ${i + 1}`}
               className={cn(
                 'group relative overflow-hidden rounded-xl ring-2 transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5',
-                sel === i ? 'ring-emas shadow-angkat' : 'ring-transparent hover:ring-garis',
+                sel === i ? 'ring-emas shadow-angkat' : 'ring-transparent hover:ring-white/10',
               )}
             >
-              <MapCanvas data={m} side={side} mapStyle="heat" label={`Peta kernel ${i + 1}`} className="aspect-square w-full" />
-              <span className="absolute bottom-1 left-1 rounded-md bg-rimba-950/70 px-1.5 text-[11px] font-semibold text-white">
+              <MapCanvas
+                data={m}
+                side={side}
+                mapStyle="heat"
+                label={`Peta kernel ${i + 1}`}
+                className="aspect-square w-full"
+              />
+              <span className="bg-rimba-950/70 absolute bottom-1 left-1 rounded-md px-1.5 text-[11px] font-semibold text-white">
                 {i + 1}
               </span>
             </button>
           ))}
         </div>
-        <p className="mt-3 text-xs text-redup">Warna terang = ciri yang terdeteksi kuat. Ketuk peta untuk melihat lebih dekat.</p>
+        <p className="text-redup mt-3 text-xs">
+          Warna terang = ciri yang terdeteksi kuat. Ketuk peta untuk melihat lebih dekat.
+        </p>
       </div>
       <div>
         <div className="flex flex-wrap items-start gap-5">
@@ -137,22 +164,22 @@ function MapsStep({ r, pooled, weights }: { r: Classification; pooled: boolean; 
             side={side}
             mapStyle="heat"
             label={`Peta kernel ${sel + 1} diperbesar`}
-            className="aspect-square w-40 rounded-2xl ring-1 ring-garis sm:w-48"
+            className="aspect-square w-40 rounded-2xl ring-1 ring-white/10 sm:w-48"
           />
           {!pooled && k && (
             <div>
               <p className="mb-2 text-sm font-semibold">Kernel {sel + 1} hasil pelatihan</p>
               <KernelGrid k={k} />
-              <p className="mt-2 text-xs text-redup angka">bias b = {fmt(weights!.bc[sel], 3)}</p>
+              <p className="text-redup angka mt-2 text-xs">bias b = {fmt(weights!.bc[sel], 3)}</p>
             </div>
           )}
         </div>
-        <p className="mt-5 leading-relaxed text-redup">
+        <p className="text-redup mt-5 leading-relaxed">
           {pooled
             ? `Setiap jendela 2 × 2 diwakili nilai terbesarnya, sehingga ukuran peta turun dari 64 × 64 menjadi ${side} × ${side} tanpa kehilangan ciri yang paling menonjol.`
             : 'Kernel 3 × 3 digeser ke seluruh citra yang sudah diberi zero padding. Di tiap posisi, sembilan piksel dikalikan dengan bobot kernel, dijumlahkan, lalu ditambah bias. ReLU kemudian mengubah semua nilai negatif menjadi 0.'}
         </p>
-        <p className="mt-3 text-sm font-medium angka">
+        <p className="angka mt-3 text-sm font-medium">
           {Math.round(active * 100)}% elemen peta ini bernilai positif.
         </p>
       </div>
@@ -166,20 +193,21 @@ function FlattenStep({ r }: { r: Classification }) {
   const nz = useMemo(() => x.reduce((c, v) => c + (v > 0 ? 1 : 0), 0), [x])
   return (
     <div>
-      <div className="overflow-hidden rounded-2xl ring-1 ring-garis">
+      <div className="overflow-hidden rounded-2xl ring-1 ring-white/10">
         <FlatStrip x={x} />
       </div>
-      <div className="mt-2 flex justify-between text-xs text-redup angka">
+      <div className="text-redup angka mt-2 flex justify-between text-xs">
         <span>x₁</span>
         <span>kernel 1 → kernel 8</span>
         <span>x₈₁₉₂</span>
       </div>
-      <p className="mt-5 max-w-3xl leading-relaxed text-redup">
+      <p className="text-redup mt-5 max-w-3xl leading-relaxed">
         Delapan peta 32 × 32 disusun berurutan, baris demi baris, menjadi satu vektor berisi 8.192
-        angka. Dari semuanya, <strong className="text-teks angka">{nz.toLocaleString('id-ID')}</strong>{' '}
-        bernilai lebih dari nol dan ikut menentukan hasil.
+        angka. Dari semuanya,{' '}
+        <strong className="text-teks angka">{nz.toLocaleString('id-ID')}</strong> bernilai lebih
+        dari nol dan ikut menentukan hasil.
       </p>
-      <p className="mt-3 text-sm text-redup angka">
+      <p className="text-redup angka mt-3 text-sm">
         x₁ … x₈ = {Array.from(x.slice(0, 8), (v) => fmt(v, 3)).join('; ')}
       </p>
     </div>
@@ -208,7 +236,15 @@ function FlatStrip({ x }: { x: Float32Array }) {
     }
     ctx.putImageData(img, 0, 0)
   }, [x])
-  return <canvas ref={ref} role="img" aria-label="Vektor flatten 8.192 nilai" className="block h-16 w-full" style={{ imageRendering: 'pixelated' }} />
+  return (
+    <canvas
+      ref={ref}
+      role="img"
+      aria-label="Vektor flatten 8.192 nilai"
+      className="block h-16 w-full"
+      style={{ imageRendering: 'pixelated' }}
+    />
+  )
 }
 
 function HiddenStep({ r }: { r: Classification }) {
@@ -217,40 +253,41 @@ function HiddenStep({ r }: { r: Classification }) {
   const activeCount = z.reduce((c, v) => c + (v > 0 ? 1 : 0), 0)
   return (
     <div className="grid gap-8 lg:grid-cols-[1.3fr_1fr]">
-      <div className="flex h-56 items-center gap-1 rounded-2xl bg-mint/50 px-3 sm:gap-1.5">
+      <div className="flex h-56 items-center gap-1 rounded-2xl bg-white/[0.04] px-3 sm:gap-1.5">
         {Array.from(zin).map((v, j) => (
           <div key={j} className="group relative flex h-full flex-1 flex-col justify-center">
             <div className="relative h-1/2">
               {v > 0 && (
                 <div
-                  className="absolute inset-x-0 bottom-0 origin-bottom rounded-t-md bg-daun transition-[height] duration-700 ease-out"
+                  className="bg-daun absolute inset-x-0 bottom-0 origin-bottom rounded-t-md transition-[height] duration-700 ease-out"
                   style={{ height: `${(v / max) * 100}%` }}
                 />
               )}
             </div>
-            <div className="h-px bg-rimba-900/30" />
+            <div className="h-px bg-white/25" />
             <div className="relative h-1/2">
               {v <= 0 && (
                 <div
-                  className="absolute inset-x-0 top-0 rounded-b-md bg-rimba-900/15"
+                  className="absolute inset-x-0 top-0 rounded-b-md bg-white/15"
                   style={{ height: `${(-v / max) * 100}%` }}
                 />
               )}
             </div>
-            <span className="pointer-events-none absolute -top-1 left-1/2 z-10 -translate-x-1/2 -translate-y-full rounded-md bg-rimba-900 px-2 py-1 text-[11px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100 angka">
+            <span className="bg-rimba-900 angka pointer-events-none absolute -top-1 left-1/2 z-10 -translate-x-1/2 -translate-y-full rounded-md px-2 py-1 text-[11px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
               z{j + 1}: z_in {fmt(v, 2)}
             </span>
           </div>
         ))}
       </div>
       <div>
-        <p className="leading-relaxed text-redup">
-          Ke-16 hidden unit menghitung <span className="font-medium text-teks">z_in = v₀ + Σ xᵢvᵢⱼ</span>. Batang hijau
-          adalah unit yang aktif. Batang abu-abu bernilai negatif dan dimatikan ReLU sehingga tidak
+        <p className="text-redup leading-relaxed">
+          Ke-16 hidden unit menghitung{' '}
+          <span className="text-teks font-medium">z_in = v₀ + Σ xᵢvᵢⱼ</span>. Batang hijau adalah
+          unit yang aktif. Batang abu-abu bernilai negatif dan dimatikan ReLU sehingga tidak
           meneruskan sinyal.
         </p>
-        <p className="mt-4 font-display text-3xl font-bold angka">
-          {activeCount} <span className="text-lg font-semibold text-redup">dari 16 unit aktif</span>
+        <p className="font-display angka mt-4 text-3xl font-bold">
+          {activeCount} <span className="text-redup text-lg font-semibold">dari 16 unit aktif</span>
         </p>
       </div>
     </div>
@@ -270,29 +307,69 @@ function OutputStep({ r }: { r: Classification }) {
   const ano = y >= r.meta.threshold
   return (
     <div className="grid gap-8 lg:grid-cols-[1fr_1fr] lg:items-center">
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full rounded-2xl bg-mint/50" role="img" aria-label={`Kurva sigmoid, y = ${fmt(y, 3)}`}>
-        <line x1="0" x2={W} y1={Y(0.5)} y2={Y(0.5)} stroke="#0b2b26" strokeOpacity=".25" strokeDasharray="4 4" />
-        <text x="6" y={Y(0.5) - 6} fontSize="11" fill="#4b6a62">ambang 0,5</text>
-        <path d={path} fill="none" stroke="#0b2b26" strokeWidth="2.5" />
-        <line x1={X(yIn)} x2={X(yIn)} y1={Y(y)} y2={H - 16} stroke={ano ? '#c98a0b' : '#1f7a4d'} strokeDasharray="3 3" />
-        <circle cx={X(yIn)} cy={Y(y)} r="8" fill={ano ? '#ffc247' : '#3fbf77'} stroke="#0b2b26" strokeWidth="2" />
-        <text x={X(yIn) + (yIn > 4 ? -12 : 12)} y={Y(y) + (y > 0.5 ? 18 : -10)} fontSize="12" fontWeight="600" textAnchor={yIn > 4 ? 'end' : 'start'} fill="#0b2b26">
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        className="w-full rounded-2xl bg-white/[0.04]"
+        role="img"
+        aria-label={`Kurva sigmoid, y = ${fmt(y, 3)}`}
+      >
+        <line
+          x1="0"
+          x2={W}
+          y1={Y(0.5)}
+          y2={Y(0.5)}
+          stroke="#ecf6f0"
+          strokeOpacity=".3"
+          strokeDasharray="4 4"
+        />
+        <text x="6" y={Y(0.5) - 6} fontSize="11" fill="#9cb9ae">
+          ambang 0,5
+        </text>
+        <path d={path} fill="none" stroke="#ecf6f0" strokeWidth="2.5" />
+        <line
+          x1={X(yIn)}
+          x2={X(yIn)}
+          y1={Y(y)}
+          y2={H - 16}
+          stroke={ano ? '#ffc247' : '#3fbf77'}
+          strokeDasharray="3 3"
+        />
+        <circle
+          cx={X(yIn)}
+          cy={Y(y)}
+          r="8"
+          fill={ano ? '#ffc247' : '#3fbf77'}
+          stroke="#0b2b26"
+          strokeWidth="2"
+        />
+        <text
+          x={X(yIn) + (yIn > 4 ? -12 : 12)}
+          y={Y(y) + (y > 0.5 ? 18 : -10)}
+          fontSize="12"
+          fontWeight="600"
+          textAnchor={yIn > 4 ? 'end' : 'start'}
+          fill="#ecf6f0"
+        >
           y = {fmt(y, 3)}
         </text>
-        <text x={W - 6} y={H - 4} fontSize="11" textAnchor="end" fill="#4b6a62">y_in →</text>
+        <text x={W - 6} y={H - 4} fontSize="11" textAnchor="end" fill="#9cb9ae">
+          y_in →
+        </text>
       </svg>
       <div className="space-y-3 text-[0.95rem] leading-relaxed">
         <p className="angka">
-          <span className="text-redup">Jumlahan output:</span> y_in = w₀ + Σ zⱼwⱼ = <strong>{fmt(yIn, 4)}</strong>
+          <span className="text-redup">Jumlahan output:</span> y_in = w₀ + Σ zⱼwⱼ ={' '}
+          <strong>{fmt(yIn, 4)}</strong>
         </p>
         <p className="angka">
-          <span className="text-redup">Sigmoid:</span> y = 1 / (1 + e<sup>−y_in</sup>) = <strong>{fmt(y, 4)}</strong>
+          <span className="text-redup">Sigmoid:</span> y = 1 / (1 + e<sup>−y_in</sup>) ={' '}
+          <strong>{fmt(y, 4)}</strong>
         </p>
         <p className="angka">
           <span className="text-redup">Keputusan:</span> karena y {ano ? '≥' : '<'} 0,5, citra ini{' '}
           <strong>{ano ? 'anorganik (t = 1)' : 'organik (t = 0)'}</strong>.
         </p>
-        <p className="text-sm text-redup">
+        <p className="text-redup text-sm">
           Nilai y adalah peluang anorganik. Peluang organiknya 1 − y = {fmt(1 - y, 4)}.
         </p>
       </div>
@@ -311,18 +388,22 @@ export function ProcessExplorer({ result }: { result: Classification }) {
   const idx = STEPS.findIndex((s) => s.id === step)
 
   return (
-    <section id="proses" className="rounded-[2rem] bg-white p-5 shadow-lembut ring-1 ring-garis sm:p-8">
+    <section id="proses" className="kartu rounded-[2rem] p-5 sm:p-8">
       <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
         <div>
           <h2 className="text-2xl font-bold sm:text-3xl">Dari foto ke keputusan</h2>
-          <p className="mt-2 max-w-2xl text-redup">
-            Semua angka di bawah dihitung untuk fotomu barusan, persis seperti langkah umpan maju di
-            makalah. Waktu hitung {fmt(result.ms, 0)} ms.
+          <p className="text-redup mt-2 max-w-2xl">
+            Semua angka di bawah dihitung khusus untuk fotomu barusan, langkah demi langkah sesuai
+            algoritma CNN. Waktu hitungnya {fmt(result.ms, 0)} milidetik.
           </p>
         </div>
       </div>
 
-      <div role="tablist" aria-label="Langkah CNN" className="-mx-1 mt-6 flex snap-x gap-2 overflow-x-auto px-1 pb-2">
+      <div
+        role="tablist"
+        aria-label="Langkah CNN"
+        className="-mx-1 mt-6 flex snap-x gap-2 overflow-x-auto px-1 pb-2"
+      >
         {STEPS.map((s, i) => (
           <button
             key={s.id}
@@ -333,26 +414,47 @@ export function ProcessExplorer({ result }: { result: Classification }) {
             onClick={() => setStep(s.id)}
             className={cn(
               'flex shrink-0 snap-start items-center gap-2.5 rounded-2xl px-4 py-2.5 text-left transition-colors duration-200',
-              step === s.id ? 'bg-rimba-900 text-white' : i < idx ? 'bg-mint text-teks hover:bg-mint/70' : 'bg-kertas text-redup ring-1 ring-garis hover:text-teks',
+              step === s.id
+                ? 'bg-emas text-rimba-950'
+                : i < idx
+                  ? 'bg-daun/15 text-daun-terang hover:bg-daun/25'
+                  : 'text-redup bg-white/[0.04] ring-1 ring-white/10 hover:text-white',
             )}
           >
             <span
               className={cn(
-                'grid size-6 place-items-center rounded-full font-display text-xs font-bold',
-                step === s.id ? 'bg-emas text-rimba-900' : 'bg-white/80 text-teks ring-1 ring-garis',
+                'font-display grid size-6 place-items-center rounded-full text-xs font-bold',
+                step === s.id
+                  ? 'bg-rimba-950 text-emas'
+                  : 'bg-white/10 text-white ring-1 ring-white/10',
               )}
             >
               {i + 1}
             </span>
             <span>
-              <span className="block font-display text-sm font-semibold leading-tight">{s.title}</span>
-              <span className={cn('block text-xs angka', step === s.id ? 'text-mint/70' : 'text-redup')}>{s.sub}</span>
+              <span className="font-display block text-sm leading-tight font-semibold">
+                {s.title}
+              </span>
+              <span
+                className={cn(
+                  'angka block text-xs',
+                  step === s.id ? 'text-rimba-950/70' : 'text-redup',
+                )}
+              >
+                {s.sub}
+              </span>
             </span>
           </button>
         ))}
       </div>
 
-      <div key={step} id="panel-langkah" role="tabpanel" aria-labelledby={`langkah-${step}`} className="halaman-masuk mt-6">
+      <div
+        key={step}
+        id="panel-langkah"
+        role="tabpanel"
+        aria-labelledby={`langkah-${step}`}
+        className="halaman-masuk mt-6"
+      >
         {step === 'input' && <InputStep r={result} />}
         {step === 'conv' && <MapsStep r={result} pooled={false} weights={weights} />}
         {step === 'pool' && <MapsStep r={result} pooled weights={weights} />}
@@ -361,23 +463,23 @@ export function ProcessExplorer({ result }: { result: Classification }) {
         {step === 'out' && <OutputStep r={result} />}
       </div>
 
-      <div className="mt-8 flex items-center justify-between border-t border-garis pt-5">
+      <div className="mt-8 flex items-center justify-between border-t border-white/10 pt-5">
         <button
           type="button"
           onClick={() => setStep(STEPS[Math.max(0, idx - 1)].id)}
           disabled={idx === 0}
-          className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold text-redup transition-colors hover:text-teks disabled:opacity-30"
+          className="text-redup inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold transition-colors hover:text-white disabled:opacity-30"
         >
           <Icon name="arrowLeft" size={16} /> Sebelumnya
         </button>
-        <span className="text-xs text-redup angka">
+        <span className="text-redup angka text-xs">
           {idx + 1} / {STEPS.length}
         </span>
         <button
           type="button"
           onClick={() => setStep(STEPS[Math.min(STEPS.length - 1, idx + 1)].id)}
           disabled={idx === STEPS.length - 1}
-          className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold text-teks transition-colors hover:text-daun-tua disabled:opacity-30"
+          className="text-teks hover:text-daun-terang inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold transition-colors disabled:opacity-30"
         >
           Berikutnya <Icon name="arrowRight" size={16} />
         </button>

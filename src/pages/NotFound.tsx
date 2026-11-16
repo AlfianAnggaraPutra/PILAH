@@ -114,11 +114,18 @@ export default function NotFound() {
     else {
       el.style.zIndex = ''
       setOpen(null)
-      play(el, [{ transform: `translate(${d.dx}px, ${d.dy}px) rotate(-8deg)` }, { transform: 'rotate(-8deg)' }], {
-        duration: 380,
-        easing: EASE_OUT,
-        fill: 'none',
-      })
+      play(
+        el,
+        [
+          { transform: `translate(${d.dx}px, ${d.dy}px) rotate(-8deg)` },
+          { transform: 'rotate(-8deg)' },
+        ],
+        {
+          duration: 380,
+          easing: EASE_OUT,
+          fill: 'none',
+        },
+      )
     }
   }
 
@@ -128,15 +135,26 @@ export default function NotFound() {
     <section className="relative mx-auto flex min-h-[88vh] max-w-3xl flex-col items-center overflow-hidden px-5 pt-24 pb-16 text-center sm:pt-28">
       <span
         aria-hidden
-        className="pointer-events-none absolute top-16 left-1/2 -translate-x-1/2 font-display text-[min(44vw,14rem)] leading-none font-bold text-mint select-none"
+        className="font-display pointer-events-none absolute top-16 left-1/2 -translate-x-1/2 text-[min(44vw,14rem)] leading-none font-bold text-white/[0.04] select-none"
       >
         404
       </span>
 
       <div className="relative z-10 mt-6">
-        <div className="relative mx-auto touch-none" style={{ width: STAGE_W, height: 150 + BH }} data-testid="404-stage">
+        <div
+          className="masuk-skala relative mx-auto touch-none"
+          style={{ width: STAGE_W, height: 150 + BH }}
+          data-testid="404-stage"
+        >
           {(['organik', 'anorganik'] as Kind[]).map((k) => (
-            <BinLayer key={`b-${k}`} kind={k} layer="back" lid={open === k} className="z-10" style={{ left: binX(k), top: 150, width: BW, height: BH, ...lidStyle(k, open === k) }} />
+            <BinLayer
+              key={`b-${k}`}
+              kind={k}
+              layer="back"
+              lid={open === k}
+              className="z-10"
+              style={{ left: binX(k), top: 150, width: BW, height: BH, ...lidStyle(k, open === k) }}
+            />
           ))}
           {status !== 'done' && (
             <button
@@ -149,8 +167,15 @@ export default function NotFound() {
               className="absolute top-6 left-1/2 z-20 -ml-[38px] cursor-grab touch-none active:cursor-grabbing"
               style={{ width: ITEM, height: ITEM, transform: 'rotate(-8deg)' }}
             >
-              <img src={ITEMS.newspaper.src} alt="" draggable={false} className="pointer-events-none size-full motion-safe:animate-melayang drop-shadow-[0_10px_12px_rgba(11,43,38,0.25)]" />
-              <span className="pointer-events-none absolute -right-3 -bottom-1 rounded-md bg-rimba-900 px-1.5 py-0.5 font-display text-[11px] font-bold text-emas">404</span>
+              <img
+                src={ITEMS.newspaper.src}
+                alt=""
+                draggable={false}
+                className="motion-safe:animate-melayang pointer-events-none size-full drop-shadow-[0_10px_12px_rgba(11,43,38,0.25)]"
+              />
+              <span className="bg-emas font-display text-rimba-950 pointer-events-none absolute -right-3 -bottom-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold">
+                404
+              </span>
             </button>
           )}
           {(['organik', 'anorganik'] as Kind[]).map((k) => (
@@ -180,10 +205,20 @@ export default function NotFound() {
         </div>
 
         <div key={status} className="halaman-masuk mt-8" aria-live="polite">
-          <h1 className={cn('text-3xl font-bold sm:text-4xl', status === 'wrong' && 'text-emas-tua')}>{copy.title}</h1>
-          <p className="mx-auto mt-3 max-w-md text-lg text-redup">{copy.body}</p>
+          <h1
+            className={cn(
+              'text-3xl font-bold sm:text-4xl',
+              status === 'wrong' && 'text-emas-terang',
+            )}
+          >
+            {copy.title}
+          </h1>
+          <p className="text-redup mx-auto mt-3 max-w-md text-lg">{copy.body}</p>
         </div>
-        <div className="mt-8 flex flex-wrap justify-center gap-3">
+        <div
+          className="masuk mt-8 flex flex-wrap justify-center gap-3"
+          style={{ animationDelay: '300ms' }}
+        >
           <ButtonLink to="/" size="lg" variant={status === 'done' ? 'primary' : 'secondary'}>
             <Icon name="home" size={18} /> Kembali ke beranda
           </ButtonLink>

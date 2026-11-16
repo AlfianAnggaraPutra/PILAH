@@ -45,6 +45,8 @@ const seen = () => {
 
 export default function App() {
   const [splash, setSplash] = useState(() => !seen())
+  // Halaman baru dirender saat splash mulai memudar, supaya animasi masuk beranda terlihat utuh.
+  const [showPage, setShowPage] = useState(() => !splash)
   // Model mulai dimuat sejak awal, berbarengan dengan splash.
   const modelReady = useMemo(() => loadModel().catch(() => undefined), [])
 
@@ -58,18 +60,27 @@ export default function App() {
     } catch {
       /* mode privat: abaikan */
     }
+    setShowPage(true)
     setSplash(false)
   }
 
   return (
     <RouterProvider>
       <ScrollManager />
-      <div aria-hidden={splash || undefined} inert={splash || undefined}>
-        <Layout>
-          <Pages />
-        </Layout>
-      </div>
-      {splash && <SplashScreen onDone={finish} modelReady={modelReady} />}
+      {showPage && (
+        <div aria-hidden={splash || undefined} inert={splash || undefined}>
+          <Layout>
+            <Pages />
+          </Layout>
+        </div>
+      )}
+      {splash && (
+        <SplashScreen
+          onExitStart={() => setShowPage(true)}
+          onDone={finish}
+          modelReady={modelReady}
+        />
+      )}
     </RouterProvider>
   )
 }

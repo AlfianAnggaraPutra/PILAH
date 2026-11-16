@@ -1,6 +1,9 @@
 /**
  * Router kecil berbasis History API. Aplikasi ini hanya punya beberapa halaman,
  * jadi cukup ini saja, tanpa pustaka tambahan.
+ *
+ * Fitur: tautan, alamat lama dialihkan, gulir ke anchor (#berita, #faq), dan "penahan"
+ * (blocker) untuk meminta konfirmasi sebelum meninggalkan halaman yang punya data belum disimpan.
  */
 import {
   createContext,
@@ -9,6 +12,7 @@ import {
   useEffect,
   useLayoutEffect,
   useMemo,
+  useRef,
   useState,
   type AnchorHTMLAttributes,
   type MouseEvent,
@@ -20,21 +24,34 @@ export interface Loc {
   hash: string
   search: string
   key: number
+  /** true bila perpindahan terjadi di halaman yang sama (cukup digulir halus). */
+  samePage?: boolean
+}
+
+/** Mengembalikan true untuk MENAHAN perpindahan ke `to`. */
+export type Blocker = (to: string) => boolean
+
+interface NavigateOptions {
+  replace?: boolean
+  /** Abaikan penahan (dipakai setelah pengguna setuju, atau saat pindah ke halaman hasil). */
+  force?: boolean
 }
 
 interface RouterValue {
   location: Loc
-  navigate: (to: string, opts?: { replace?: boolean }) => void
+  navigate: (to: string, opts?: NavigateOptions) => void
+  setBlocker: (b: Blocker | null) => void
 }
 
 const RouterCtx = createContext<RouterValue | null>(null)
 
 let keySeq = 0
-const read = (): Loc => ({
+const read = (samePage = false): Loc => ({
   pathname: normalize(window.location.pathname),
   hash: window.location.hash,
   search: window.location.search,
   key: ++keySeq,
+  samePage,
 })
 
 /** "/tentang/" → "/tentang". */
@@ -43,10 +60,12 @@ export function normalize(p: string) {
   return s === '' ? '/' : s
 }
 
-/** Alamat lama dari versi sebelumnya dialihkan agar tautan yang sudah dibagikan tetap jalan. */
+/** Alamat lama dialihkan agar tautan yang sudah dibagikan tetap jalan. */
 const REDIRECTS: Record<string, string> = {
   '/cara-kerja': '/tentang#cara-kerja',
   '/panduan': '/#panduan',
+  '/berita': '/#berita',
+  '/faq': '/#faq',
   '/beranda': '/',
   '/pindai': '/klasifikasi',
   '/scan': '/klasifikasi',
@@ -54,33 +73,54 @@ const REDIRECTS: Record<string, string> = {
   '/tentang-kami': '/tentang',
 }
 
+const currentUrl = () => window.location.pathname + window.location.search + window.location.hash
+
 export function RouterProvider({ children }: { children: ReactNode }) {
   const [location, setLocation] = useState<Loc>(() => {
     const target = REDIRECTS[normalize(window.location.pathname)]
     if (target) window.history.replaceState(null, '', target)
     return read()
   })
+  const blockerRef = useRef<Blocker | null>(null)
+  const lastUrl = useRef(currentUrl())
 
-  const navigate = useCallback((to: string, opts: { replace?: boolean } = {}) => {
+  const navigate = useCallback((to: string, opts: NavigateOptions = {}) => {
     const url = new URL(to, window.location.href)
     const redirected = REDIRECTS[normalize(url.pathname)]
     const finalUrl = redirected ? new URL(redirected, window.location.href) : url
-    const same =
-      finalUrl.pathname === window.location.pathname &&
-      finalUrl.search === window.location.search &&
-      finalUrl.hash === window.location.hash
+    const target = finalUrl.pathname + finalUrl.search + finalUrl.hash
+    const samePage = normalize(finalUrl.pathname) === normalize(window.location.pathname)
+    if (!opts.force && !samePage && blockerRef.current?.(target)) return
+    const same = target === currentUrl()
     if (opts.replace || same) window.history.replaceState(null, '', finalUrl)
     else window.history.pushState(null, '', finalUrl)
-    setLocation(read())
+    lastUrl.current = currentUrl()
+    setLocation(read(samePage))
+  }, [])
+
+  const setBlocker = useCallback((b: Blocker | null) => {
+    blockerRef.current = b
   }, [])
 
   useEffect(() => {
-    const onPop = () => setLocation(read())
+    const onPop = () => {
+      const target = currentUrl()
+      if (blockerRef.current && blockerRef.current(target)) {
+        // Batalkan tombol back: kembalikan alamat semula, keputusan diserahkan ke modal.
+        window.history.pushState(null, '', lastUrl.current)
+        return
+      }
+      lastUrl.current = target
+      setLocation(read())
+    }
     window.addEventListener('popstate', onPop)
     return () => window.removeEventListener('popstate', onPop)
   }, [])
 
-  const value = useMemo(() => ({ location, navigate }), [location, navigate])
+  const value = useMemo(
+    () => ({ location, navigate, setBlocker }),
+    [location, navigate, setBlocker],
+  )
   return <RouterCtx.Provider value={value}>{children}</RouterCtx.Provider>
 }
 
@@ -93,24 +133,35 @@ function useRouter() {
 export const useLocation = () => useRouter().location
 export const useNavigate = () => useRouter().navigate
 
+/**
+ * Pasang penahan selama `blocker` tidak null. Penahan dilepas otomatis saat komponen dilepas.
+ */
+export function useBlocker(blocker: Blocker | null) {
+  const { setBlocker } = useRouter()
+  // useLayoutEffect: penahan sudah terpasang sebelum layar digambar, jadi klik secepat apa pun tetap tertahan.
+  useLayoutEffect(() => {
+    setBlocker(blocker)
+    return () => setBlocker(null)
+  }, [blocker, setBlocker])
+}
+
 /** Gulir ke atas saat berpindah halaman, atau ke anchor bila alamat punya #hash. */
 export function ScrollManager() {
-  const { pathname, hash, key } = useLocation()
+  const { pathname, hash, key, samePage } = useLocation()
   useLayoutEffect(() => {
     if (hash) {
       // Tunggu halaman tujuan selesai dirender (termasuk komponen lazy) sebelum mencari anchor.
       let tries = 0
       const find = () => {
         const el = document.getElementById(decodeURIComponent(hash.slice(1)))
-        // Lompat langsung (tanpa animasi gulir) karena halaman baru saja berganti.
-        if (el) el.scrollIntoView({ behavior: 'instant', block: 'start' })
+        if (el) el.scrollIntoView({ behavior: samePage ? 'smooth' : 'instant', block: 'start' })
         else if (tries++ < 20) setTimeout(find, 50)
       }
       find()
     } else {
-      window.scrollTo(0, 0)
+      window.scrollTo({ top: 0, behavior: samePage ? 'smooth' : 'instant' })
     }
-  }, [pathname, hash, key])
+  }, [pathname, hash, key, samePage])
   return null
 }
 
@@ -143,16 +194,21 @@ export function Link({ to, replace, onClick, target, ...rest }: LinkProps) {
 export function NavLink({
   to,
   end,
+  active: activeOverride,
   className,
   children,
   ...rest
 }: Omit<LinkProps, 'className' | 'children'> & {
   end?: boolean
+  /** Paksa status aktif (mis. hasil scroll-spy untuk #berita / #faq). */
+  active?: boolean
   className?: (active: boolean) => string
   children: ReactNode | ((active: boolean) => ReactNode)
 }) {
   const { pathname } = useLocation()
-  const active = end ? pathname === to : pathname === to || pathname.startsWith(`${to}/`)
+  const path = to.split('#')[0] || '/'
+  const routeActive = end ? pathname === path : pathname === path || pathname.startsWith(`${path}/`)
+  const active = activeOverride ?? routeActive
   return (
     <Link
       to={to}

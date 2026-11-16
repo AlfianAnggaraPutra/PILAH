@@ -23,7 +23,9 @@ function classify(err: unknown): CameraFailure {
 }
 
 export const cameraSupported = () =>
-  typeof navigator !== 'undefined' && !!navigator.mediaDevices?.getUserMedia && window.isSecureContext
+  typeof navigator !== 'undefined' &&
+  !!navigator.mediaDevices?.getUserMedia &&
+  window.isSecureContext
 
 /** Kamera langsung di dalam halaman, dengan bingkai bidik. */
 export function CameraModal({
@@ -121,7 +123,7 @@ export function CameraModal({
       role="dialog"
       aria-modal="true"
       aria-label="Kamera"
-      className="fixed inset-0 z-[90] flex flex-col bg-rimba-950 halaman-masuk"
+      className="bg-rimba-950 halaman-masuk fixed inset-0 z-[90] flex flex-col"
     >
       <div className="relative flex-1 overflow-hidden">
         <video
@@ -135,13 +137,23 @@ export function CameraModal({
           )}
         />
         {!ready && (
-          <p className="absolute inset-0 grid place-items-center text-mint/70">Membuka kamera…</p>
+          <p className="text-mint-teks/70 absolute inset-0 grid place-items-center">
+            Membuka kamera…
+          </p>
         )}
         {/* Bingkai bidik persegi: model membaca citra persegi 64 × 64. */}
-        <div aria-hidden className="pointer-events-none absolute inset-0 grid place-items-center p-8">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 grid place-items-center p-8"
+        >
           <div className="relative aspect-square w-[min(78vw,62vh)]">
-            {['top-0 left-0 border-t-4 border-l-4 rounded-tl-3xl', 'top-0 right-0 border-t-4 border-r-4 rounded-tr-3xl', 'bottom-0 left-0 border-b-4 border-l-4 rounded-bl-3xl', 'bottom-0 right-0 border-b-4 border-r-4 rounded-br-3xl'].map((c) => (
-              <span key={c} className={cn('absolute size-12 border-emas', c)} />
+            {[
+              'top-0 left-0 border-t-4 border-l-4 rounded-tl-3xl',
+              'top-0 right-0 border-t-4 border-r-4 rounded-tr-3xl',
+              'bottom-0 left-0 border-b-4 border-l-4 rounded-bl-3xl',
+              'bottom-0 right-0 border-b-4 border-r-4 rounded-br-3xl',
+            ].map((c) => (
+              <span key={c} className={cn('border-emas absolute size-12', c)} />
             ))}
           </div>
         </div>
@@ -173,7 +185,7 @@ export function CameraModal({
           aria-label="Ambil foto"
           className="grid size-20 place-items-center rounded-full bg-white ring-4 ring-white/30 transition-transform active:scale-90 disabled:opacity-50"
         >
-          <span className="size-16 rounded-full bg-emas ring-2 ring-rimba-900" />
+          <span className="bg-emas ring-rimba-900 size-16 rounded-full ring-2" />
         </button>
         <button
           type="button"

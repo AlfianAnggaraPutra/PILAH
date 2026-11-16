@@ -13,20 +13,23 @@ import { cn } from '@/lib/utils'
 
 // Panggung logis 480 × 400, diskalakan mengikuti lebar wadah.
 const W = 480
-const H = 400
-const BIN_W = 150
+const H = 430
+const BIN_W = 148
 const BIN_H = BIN_W / BIN_RATIO
-const BIN_TOP = H - BIN_H - 6
+const LABEL_H = 44 // ruang nama tong di bawah tong
+const BIN_TOP = H - BIN_H - LABEL_H
 const BIN_X: Record<WasteKind, number> = { organik: W / 2 - BIN_W - 6, anorganik: W / 2 + 6 }
 const MOUTH_Y = BIN_TOP + (72 + 45) * (BIN_W / 220)
 const ITEM = 66
+// Titik henti benda (x, y, rotasi). Baris teratas diberi jarak agar benda yang melayang
+// tidak pernah menyentuh tepi atas panggung.
 const SLOTS: Array<[number, number, number]> = [
-  [52, 52, -12],
-  [160, 22, 8],
-  [276, 40, -6],
-  [398, 62, 12],
-  [74, 158, 6],
-  [404, 168, -10],
+  [62, 62, -12],
+  [172, 46, 8],
+  [292, 58, -6],
+  [408, 72, 12],
+  [46, 168, 6],
+  [432, 172, -10],
 ]
 
 function pickItems(): WasteItem[] {
@@ -50,7 +53,10 @@ export function SortGame() {
   const [missed, setMissed] = useState<Set<string>>(() => new Set())
   const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null)
   const itemEls = useRef<Record<string, HTMLButtonElement | null>>({})
-  const binEls = useRef<Record<WasteKind, HTMLDivElement | null>>({ organik: null, anorganik: null })
+  const binEls = useRef<Record<WasteKind, HTMLDivElement | null>>({
+    organik: null,
+    anorganik: null,
+  })
   const drag = useRef<{ id: string; sx: number; sy: number; moved: boolean } | null>(null)
 
   useLayoutEffect(() => {
@@ -89,9 +95,18 @@ export function SortGame() {
         el,
         [
           { transform: `translate(${fromX}px, ${fromY}px) rotate(${slot[2]}deg) scale(1.08)` },
-          { transform: `translate(${tx}px, ${Math.min(fromY, ty - 120)}px) rotate(${slot[2] + 60}deg) scale(1)`, offset: 0.45 },
-          { transform: `translate(${tx}px, ${ty - 8}px) rotate(${slot[2] + 120}deg) scale(0.7)`, offset: 0.78 },
-          { transform: `translate(${tx}px, ${ty + 50}px) rotate(${slot[2] + 150}deg) scale(0.4)`, opacity: 0 },
+          {
+            transform: `translate(${tx}px, ${Math.min(fromY, ty - 120)}px) rotate(${slot[2] + 60}deg) scale(1)`,
+            offset: 0.45,
+          },
+          {
+            transform: `translate(${tx}px, ${ty - 8}px) rotate(${slot[2] + 120}deg) scale(0.7)`,
+            offset: 0.78,
+          },
+          {
+            transform: `translate(${tx}px, ${ty + 50}px) rotate(${slot[2] + 150}deg) scale(0.4)`,
+            opacity: 0,
+          },
         ],
         { duration: reduced ? 1 : 620, easing: 'ease-in' },
       )
@@ -112,8 +127,15 @@ export function SortGame() {
         await play(
           el,
           [
-            { transform: `translate(${tx}px, ${ty}px) rotate(${slot[2]}deg) scale(0.5)`, opacity: 0 },
-            { transform: `translate(${tx * 0.6}px, ${ty - 150}px) rotate(${slot[2] - 25}deg) scale(1)`, opacity: 1, offset: 0.5 },
+            {
+              transform: `translate(${tx}px, ${ty}px) rotate(${slot[2]}deg) scale(0.5)`,
+              opacity: 0,
+            },
+            {
+              transform: `translate(${tx * 0.6}px, ${ty - 150}px) rotate(${slot[2] - 25}deg) scale(1)`,
+              opacity: 1,
+              offset: 0.5,
+            },
             { transform: `translate(0px, 0px) rotate(${slot[2]}deg) scale(1)`, opacity: 1 },
           ],
           { duration: reduced ? 1 : 650, easing: EASE_OUT, fill: 'none' },
@@ -222,7 +244,8 @@ export function SortGame() {
         >
           <div
             aria-hidden
-            className="absolute inset-x-6 bottom-0 h-24 rounded-[50%] bg-daun/20 blur-3xl"
+            className="bg-daun/20 absolute inset-x-10 h-24 rounded-[50%] blur-3xl"
+            style={{ top: BIN_TOP + BIN_H - 70 }}
           />
           {(['organik', 'anorganik'] as const).map((kind) => (
             <BinLayer
@@ -231,7 +254,13 @@ export function SortGame() {
               layer="back"
               lid={binOpen(kind)}
               className="z-10"
-              style={{ left: BIN_X[kind], top: BIN_TOP, width: BIN_W, height: BIN_H, ...lidStyle(kind, binOpen(kind)) }}
+              style={{
+                left: BIN_X[kind],
+                top: BIN_TOP,
+                width: BIN_W,
+                height: BIN_H,
+                ...lidStyle(kind, binOpen(kind)),
+              }}
             />
           ))}
           {items.map((it, i) => {
@@ -278,7 +307,9 @@ export function SortGame() {
                 <span
                   className={cn(
                     'block size-full transition-transform duration-300 ease-out group-hover:scale-110',
-                    selected === it.id ? 'scale-115 drop-shadow-[0_0_14px_rgb(255_194_71/0.9)]' : 'motion-safe:animate-melayang',
+                    selected === it.id
+                      ? 'scale-115 drop-shadow-[0_0_14px_rgb(255_194_71/0.9)]'
+                      : 'motion-safe:animate-melayang',
                   )}
                   style={{ animationDelay: `${i * -0.8}s` }}
                 >
@@ -302,7 +333,13 @@ export function SortGame() {
               layer="front"
               lid={!binOpen(kind)}
               className="z-30"
-              style={{ left: BIN_X[kind], top: BIN_TOP, width: BIN_W, height: BIN_H, ...lidStyle(kind, binOpen(kind)) }}
+              style={{
+                left: BIN_X[kind],
+                top: BIN_TOP,
+                width: BIN_W,
+                height: BIN_H,
+                ...lidStyle(kind, binOpen(kind)),
+              }}
             />
           ))}
           {/* Tombol tong untuk ketuk/keyboard; berada di atas gambar tong. */}
@@ -320,36 +357,49 @@ export function SortGame() {
               style={{ left: BIN_X[kind], top: BIN_TOP + 30, width: BIN_W, height: BIN_H - 30 }}
             />
           ))}
-          {(['organik', 'anorganik'] as const).map((kind) => (
-            <span
-              key={`l-${kind}`}
-              className={cn(
-                'pointer-events-none absolute z-30 rounded-full px-3 py-1 font-display text-[13px] font-semibold',
-                kind === 'organik' ? 'bg-daun text-rimba-900' : 'bg-emas text-rimba-900',
-              )}
-              style={{
-                left: BIN_X[kind] + BIN_W / 2,
-                top: BIN_TOP + BIN_H - 34,
-                transform: 'translateX(-50%)',
-              }}
-            >
-              {kind === 'organik' ? 'Organik' : 'Anorganik'}
-            </span>
-          ))}
+          {(['organik', 'anorganik'] as const).map((kind) => {
+            const lit = binOpen(kind)
+            return (
+              <span
+                key={`l-${kind}`}
+                className="pointer-events-none absolute z-30 flex flex-col items-center"
+                style={{ left: BIN_X[kind], top: BIN_TOP + BIN_H + 6, width: BIN_W }}
+              >
+                <span
+                  className={cn(
+                    'font-display text-[15px] font-semibold tracking-wide transition-[color,transform] duration-300',
+                    kind === 'organik' ? 'text-daun-terang' : 'text-emas-terang',
+                    lit && 'scale-110',
+                  )}
+                >
+                  {kind === 'organik' ? 'Organik' : 'Anorganik'}
+                </span>
+                <span
+                  className={cn(
+                    'mt-1.5 h-[3px] rounded-full transition-[width,opacity] duration-300',
+                    kind === 'organik' ? 'bg-daun' : 'bg-emas',
+                    lit ? 'w-16 opacity-100' : 'w-8 opacity-60',
+                  )}
+                />
+              </span>
+            )
+          })}
         </div>
 
         {finished && (
-          <div className="absolute inset-x-0 top-0 z-50 mx-auto flex max-w-sm flex-col items-center rounded-3xl bg-rimba-950/85 px-6 py-5 text-center ring-1 ring-white/10 backdrop-blur-md halaman-masuk">
+          <div className="bg-rimba-950/90 shadow-angkat halaman-masuk absolute inset-x-0 top-6 z-50 mx-auto flex max-w-sm flex-col items-center rounded-3xl px-6 py-5 text-center ring-1 ring-white/10 backdrop-blur-md">
             <p className="font-display text-lg font-semibold text-white">
               {firstTry === items.length
                 ? 'Sempurna, semuanya tepat di percobaan pertama.'
                 : `Beres! ${firstTry} dari ${items.length} tepat di percobaan pertama.`}
             </p>
-            <p className="mt-1 text-sm text-mint/75">Sekarang coba dengan sampah di dekatmu.</p>
+            <p className="text-mint-teks/80 mt-1 text-sm">
+              Sekarang coba dengan sampah di dekatmu.
+            </p>
             <div className="mt-4 flex flex-wrap justify-center gap-2">
               <Link
                 to="/klasifikasi"
-                className="kilau inline-flex h-10 items-center gap-2 rounded-full bg-emas px-5 font-display text-sm font-semibold text-rimba-900 hover:bg-emas-terang"
+                className="kilau bg-emas font-display text-rimba-900 hover:bg-emas-terang inline-flex h-10 items-center gap-2 rounded-full px-5 text-sm font-semibold"
               >
                 <Icon name="scan" size={17} /> Pindai sampah
               </Link>
@@ -370,12 +420,16 @@ export function SortGame() {
           aria-live="polite"
           className={cn(
             'transition-colors',
-            !message ? 'text-mint/70' : message.ok ? 'text-daun-terang' : 'text-emas-terang',
+            !message ? 'text-redup' : message.ok ? 'text-daun-terang' : 'text-emas-terang',
           )}
         >
-          {message?.text ?? 'Seret sampah ke tong yang sesuai, atau ketuk sampah lalu ketuk tongnya.'}
+          {message?.text ??
+            'Seret sampah ke tong yang sesuai, atau ketuk sampah lalu ketuk tongnya.'}
         </p>
-        <span data-testid="skor" className="shrink-0 rounded-full bg-white/8 px-3 py-1 font-display text-xs font-semibold text-white ring-1 ring-white/15 angka">
+        <span
+          data-testid="skor"
+          className="font-display angka shrink-0 rounded-full bg-white/[0.08] px-3 py-1 text-xs font-semibold text-white ring-1 ring-white/15"
+        >
           {done.size}/{items.length}
         </span>
       </div>

@@ -33,7 +33,8 @@ const CONV = Array.from({ length: 3 }, (_, i) =>
   }),
 )
 
-const cell = 'grid aspect-square place-items-center rounded-md text-[11px] font-semibold angka sm:text-xs'
+const cell =
+  'grid aspect-square place-items-center rounded-md text-[11px] font-semibold angka sm:text-xs'
 
 export function ConvDemo() {
   const [pos, setPos] = useState(0)
@@ -62,7 +63,7 @@ export function ConvDemo() {
   return (
     <div ref={ref} className="flex flex-wrap items-center gap-x-10 gap-y-6">
       <div>
-        <p className="mb-2 text-xs font-semibold text-redup">Citra setelah zero padding (5 × 5)</p>
+        <p className="text-redup mb-2 text-xs font-semibold">Citra setelah zero padding (5 × 5)</p>
         <div className="grid w-56 grid-cols-5 gap-1 sm:w-64">
           {PAD.flat().map((v, idx) => {
             const r = Math.floor(idx / 5)
@@ -74,7 +75,11 @@ export function ConvDemo() {
                 className={cn(
                   cell,
                   'transition-colors duration-300',
-                  inWin ? 'bg-emas text-rimba-900' : v === 0 ? 'bg-garis/50 text-redup' : 'bg-mint',
+                  inWin
+                    ? 'bg-emas text-rimba-950'
+                    : v === 0
+                      ? 'text-redup bg-white/[0.05]'
+                      : 'bg-daun/15 text-mint-teks',
                 )}
               >
                 {fmt(v, 2)}
@@ -85,21 +90,24 @@ export function ConvDemo() {
       </div>
       <div className="flex items-center gap-4 lg:flex-col">
         <div>
-          <p className="mb-2 text-xs font-semibold text-redup">Kernel K</p>
+          <p className="text-redup mb-2 text-xs font-semibold">Kernel K</p>
           <div className="grid w-28 grid-cols-3 gap-1">
             {K3.flat().map((k, idx) => (
-              <span key={idx} className={cn(cell, 'bg-rimba-900 text-white')}>
+              <span
+                key={idx}
+                className={cn(cell, 'bg-emas/15 text-emas-terang ring-emas/25 ring-1')}
+              >
                 {k}
               </span>
             ))}
           </div>
         </div>
-        <p className="text-sm text-redup">
+        <p className="text-redup text-sm">
           bias b<sub>c</sub> = 0,1
         </p>
       </div>
       <div>
-        <p className="mb-2 text-xs font-semibold text-redup">Feature map C (3 × 3)</p>
+        <p className="text-redup mb-2 text-xs font-semibold">Feature map C (3 × 3)</p>
         <div className="grid w-40 grid-cols-3 gap-1">
           {CONV.flat().map((v, idx) => (
             <button
@@ -113,7 +121,11 @@ export function ConvDemo() {
               className={cn(
                 cell,
                 'transition-[background-color,transform] duration-300 hover:scale-105',
-                idx === pos ? 'scale-105 bg-emas text-rimba-900 ring-2 ring-rimba-900' : idx < pos ? 'bg-daun/80 text-rimba-900' : 'bg-garis/50 text-redup',
+                idx === pos
+                  ? 'bg-emas text-rimba-950 scale-105 ring-2 ring-white'
+                  : idx < pos
+                    ? 'bg-daun/80 text-rimba-950'
+                    : 'text-redup bg-white/[0.06]',
               )}
             >
               {idx <= pos ? fmt(v, 2) : '?'}
@@ -122,8 +134,15 @@ export function ConvDemo() {
         </div>
       </div>
       <div className="w-full">
-        <p className="rounded-2xl bg-mint/70 p-4 text-sm leading-relaxed angka" aria-live="polite">
-          C<sub>{i + 1},{j + 1}</sub> = 0,1{terms.length ? ` + ${terms.join(' + ')}` : ''} ={' '}
+        <p
+          className="angka rounded-2xl bg-white/[0.05] p-4 text-sm leading-relaxed ring-1 ring-white/10"
+          aria-live="polite"
+        >
+          C
+          <sub>
+            {i + 1},{j + 1}
+          </sub>{' '}
+          = 0,1{terms.length ? ` + ${terms.join(' + ')}` : ''} ={' '}
           <strong>{fmt(CONV[i][j], 2)}</strong>
           {pos === 0 && <span className="text-redup"> (sama dengan hitung manual di PPT)</span>}
         </p>
@@ -131,9 +150,10 @@ export function ConvDemo() {
           <button
             type="button"
             onClick={() => setPlaying((p) => !p)}
-            className="inline-flex h-10 items-center gap-2 rounded-full bg-rimba-900 px-4 text-sm font-semibold text-white transition-colors hover:bg-rimba-800"
+            className="bg-emas text-rimba-950 hover:bg-emas-terang inline-flex h-10 items-center gap-2 rounded-full px-4 text-sm font-semibold transition-colors"
           >
-            <Icon name={playing ? 'pause' : 'play'} size={15} /> {playing ? 'Jeda' : 'Putar otomatis'}
+            <Icon name={playing ? 'pause' : 'play'} size={15} />{' '}
+            {playing ? 'Jeda' : 'Putar otomatis'}
           </button>
           <button
             type="button"
@@ -141,7 +161,7 @@ export function ConvDemo() {
               setPlaying(false)
               setPos((p) => (p + 1) % 9)
             }}
-            className="inline-flex h-10 items-center gap-2 rounded-full px-4 text-sm font-semibold ring-1 ring-garis transition-colors hover:bg-mint"
+            className="inline-flex h-10 items-center gap-2 rounded-full px-4 text-sm font-semibold ring-1 ring-white/15 transition-colors hover:bg-white/[0.06]"
           >
             Geser kernel <Icon name="arrowRight" size={15} />
           </button>
@@ -170,13 +190,14 @@ export function PoolDemo() {
     const r0 = Math.floor(w / 2) * 2
     const c0 = (w % 2) * 2
     let best = { v: -1, r: 0, c: 0 }
-    for (let r = r0; r < r0 + 2; r++) for (let c = c0; c < c0 + 2; c++) if (R4[r][c] > best.v) best = { v: R4[r][c], r, c }
+    for (let r = r0; r < r0 + 2; r++)
+      for (let c = c0; c < c0 + 2; c++) if (R4[r][c] > best.v) best = { v: R4[r][c], r, c }
     return best
   })
   return (
     <div className="flex flex-wrap items-center gap-6 sm:gap-10">
       <div>
-        <p className="mb-2 text-xs font-semibold text-redup">R setelah ReLU (4 × 4)</p>
+        <p className="text-redup mb-2 text-xs font-semibold">R setelah ReLU (4 × 4)</p>
         <div className="grid w-52 grid-cols-4 gap-1">
           {R4.flat().map((v, idx) => {
             const r = Math.floor(idx / 4)
@@ -191,8 +212,11 @@ export function PoolDemo() {
                 className={cn(
                   cell,
                   'cursor-default transition-all duration-200',
-                  win === null || win === w ? WIN_SOFT[w] : 'bg-garis/30 text-redup/60',
-                  isMax && (win === w ? `${WIN_COLORS[w]} text-rimba-900 ring-2 ring-rimba-900` : 'ring-2 ring-rimba-900/40'),
+                  win === null || win === w ? WIN_SOFT[w] : 'text-redup/50 bg-white/[0.03]',
+                  isMax &&
+                    (win === w
+                      ? `${WIN_COLORS[w]} text-rimba-950 ring-2 ring-white`
+                      : 'ring-2 ring-white/40'),
                 )}
               >
                 {fmt(v, 2)}
@@ -203,7 +227,7 @@ export function PoolDemo() {
       </div>
       <Icon name="arrowRight" size={22} className="text-redup" />
       <div>
-        <p className="mb-2 text-xs font-semibold text-redup">P (2 × 2)</p>
+        <p className="text-redup mb-2 text-xs font-semibold">P (2 × 2)</p>
         <div className="grid w-28 grid-cols-2 gap-1">
           {P.map((p, w) => (
             <button
@@ -213,16 +237,22 @@ export function PoolDemo() {
               onPointerLeave={() => setWin(null)}
               onFocus={() => setWin(w)}
               onBlur={() => setWin(null)}
-              className={cn(cell, 'text-sm transition-transform duration-200', WIN_COLORS[w], 'text-rimba-900', win === w && 'scale-110')}
+              className={cn(
+                cell,
+                'text-sm transition-transform duration-200',
+                WIN_COLORS[w],
+                'text-rimba-950',
+                win === w && 'scale-110',
+              )}
             >
               {fmt(p.v, 2)}
             </button>
           ))}
         </div>
       </div>
-      <p className="max-w-xs text-sm leading-relaxed text-redup">
-        Arahkan kursor ke salah satu warna. Setiap jendela 2 × 2 hanya meneruskan nilai terbesarnya, dan
-        posisinya dicatat untuk propagasi balik.
+      <p className="text-redup max-w-xs text-sm leading-relaxed">
+        Arahkan kursor ke salah satu warna. Setiap jendela 2 × 2 hanya meneruskan nilai terbesarnya,
+        dan posisinya dicatat untuk propagasi balik.
       </p>
     </div>
   )
@@ -249,14 +279,39 @@ export function SigmoidDemo() {
   return (
     <div className="space-y-5">
       <div>
-        <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label={`Sigmoid dari ${fmt(yin, 1)} adalah ${fmt(y, 4)}`}>
-          <rect x="0" y="0" width={W / 2} height={H} fill="#e4f4ea" opacity=".6" />
-          <rect x={W / 2} y="0" width={W / 2} height={H} fill="#fff4d6" opacity=".7" />
-          <line x1="0" x2={W} y1={Y(0.5)} y2={Y(0.5)} stroke="#0b2b26" strokeOpacity=".25" strokeDasharray="4 4" />
-          <path d={path} fill="none" stroke="#0b2b26" strokeWidth="2.5" />
-          <circle cx={X(yin)} cy={Y(y)} r="7" fill={ano ? '#ffc247' : '#3fbf77'} stroke="#0b2b26" strokeWidth="2" style={{ transition: 'cx .15s, cy .15s' }} />
-          <text x="8" y="16" fontSize="11" fill="#1f7a4d" fontWeight="600">organik</text>
-          <text x={W - 8} y="16" fontSize="11" fill="#a86f00" fontWeight="600" textAnchor="end">anorganik</text>
+        <svg
+          viewBox={`0 0 ${W} ${H}`}
+          className="w-full"
+          role="img"
+          aria-label={`Sigmoid dari ${fmt(yin, 1)} adalah ${fmt(y, 4)}`}
+        >
+          <rect x="0" y="0" width={W / 2} height={H} fill="#3fbf77" opacity=".08" />
+          <rect x={W / 2} y="0" width={W / 2} height={H} fill="#ffc247" opacity=".08" />
+          <line
+            x1="0"
+            x2={W}
+            y1={Y(0.5)}
+            y2={Y(0.5)}
+            stroke="#ecf6f0"
+            strokeOpacity=".3"
+            strokeDasharray="4 4"
+          />
+          <path d={path} fill="none" stroke="#ecf6f0" strokeWidth="2.5" />
+          <circle
+            cx={X(yin)}
+            cy={Y(y)}
+            r="7"
+            fill={ano ? '#ffc247' : '#3fbf77'}
+            stroke="#0b2b26"
+            strokeWidth="2"
+            style={{ transition: 'cx .15s, cy .15s' }}
+          />
+          <text x="8" y="16" fontSize="11" fill="#8cebb3" fontWeight="600">
+            organik
+          </text>
+          <text x={W - 8} y="16" fontSize="11" fill="#ffe08f" fontWeight="600" textAnchor="end">
+            anorganik
+          </text>
         </svg>
         <label className="mt-3 block text-sm font-semibold" htmlFor="slider-yin">
           Geser nilai y_in: <span className="angka">{fmt(yin, 1)}</span>
@@ -269,27 +324,32 @@ export function SigmoidDemo() {
           step={0.1}
           value={yin}
           onChange={(e) => setYin(+e.target.value)}
-          className="mt-2 w-full accent-rimba-900"
+          className="accent-emas mt-2 w-full"
         />
       </div>
       <div className="grid gap-4 text-[0.95rem] sm:grid-cols-[0.8fr_1.2fr] sm:items-start">
         <div className="space-y-2">
-        <p className="angka">
-          y = σ({fmt(yin, 1)}) = <strong className="text-lg">{fmt(y, 4)}</strong>
-        </p>
-        <p>
-          Kelas: <strong className={ano ? 'text-emas-tua' : 'text-daun-tua'}>{ano ? 'anorganik (t̂ = 1)' : 'organik (t̂ = 0)'}</strong>
-        </p>
+          <p className="angka">
+            y = σ({fmt(yin, 1)}) = <strong className="text-lg">{fmt(y, 4)}</strong>
+          </p>
+          <p>
+            Kelas:{' '}
+            <strong className={ano ? 'text-emas-terang' : 'text-daun-terang'}>
+              {ano ? 'anorganik (t̂ = 1)' : 'organik (t̂ = 0)'}
+            </strong>
+          </p>
         </div>
-        <div className="rounded-2xl bg-white p-4 text-sm ring-1 ring-garis">
+        <div className="rounded-2xl bg-white/[0.05] p-4 text-sm ring-1 ring-white/10">
           <p className="font-semibold">Error BCE untuk tebakan ini</p>
-          <p className="mt-2 angka">
+          <p className="angka mt-2">
             jika target t = 1: L = −ln y = <strong>{fmt(L1, 4)}</strong>
           </p>
           <p className="angka">
             jika target t = 0: L = −ln(1 − y) = <strong>{fmt(L0, 4)}</strong>
           </p>
-          <p className="mt-2 text-xs text-redup">Makin jauh y dari target, makin besar error yang harus diperbaiki backpropagation.</p>
+          <p className="text-redup mt-2 text-xs">
+            Makin jauh y dari target, makin besar error yang harus diperbaiki backpropagation.
+          </p>
         </div>
       </div>
     </div>
@@ -309,15 +369,47 @@ export function LossChart({ loss, epsilon }: { loss: number[]; epsilon: number }
   const Y = (v: number) => H - pad + 6 - (v / max) * (H - pad - 4)
   const d = loss.map((v, i) => `${i ? 'L' : 'M'}${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(' ')
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label={`Rata-rata error turun dari ${fmt(loss[0], 3)} ke ${fmt(loss[loss.length - 1], 3)}`}>
-      <line x1={pad} x2={W - 10} y1={Y(epsilon)} y2={Y(epsilon)} stroke="#d93f45" strokeDasharray="4 4" strokeOpacity=".7" />
-      <text x={W - 10} y={Y(epsilon) - 5} fontSize="11" textAnchor="end" fill="#d93f45">ε = {fmt(epsilon, 2)}</text>
-      <path d={`${d} L${X(loss.length - 1)},${H - pad + 6} L${X(0)},${H - pad + 6} Z`} fill="#3fbf77" opacity=".15" />
-      <path d={d} fill="none" stroke="#1f7a4d" strokeWidth="2.5" strokeLinejoin="round" />
-      <line x1={pad} x2={W - 10} y1={H - pad + 6} y2={H - pad + 6} stroke="#0b2b26" strokeOpacity=".2" />
-      <text x={pad} y={H - 6} fontSize="11" fill="#4b6a62">epoch 1</text>
-      <text x={W - 10} y={H - 6} fontSize="11" textAnchor="end" fill="#4b6a62">epoch {loss.length}</text>
-      <text x="4" y={Y(loss[0]) + 4} fontSize="11" fill="#4b6a62">{fmt(loss[0], 2)}</text>
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      className="w-full"
+      role="img"
+      aria-label={`Rata-rata error turun dari ${fmt(loss[0], 3)} ke ${fmt(loss[loss.length - 1], 3)}`}
+    >
+      <line
+        x1={pad}
+        x2={W - 10}
+        y1={Y(epsilon)}
+        y2={Y(epsilon)}
+        stroke="#ff6b6b"
+        strokeDasharray="4 4"
+        strokeOpacity=".7"
+      />
+      <text x={W - 10} y={Y(epsilon) - 5} fontSize="11" textAnchor="end" fill="#ff6b6b">
+        ε = {fmt(epsilon, 2)}
+      </text>
+      <path
+        d={`${d} L${X(loss.length - 1)},${H - pad + 6} L${X(0)},${H - pad + 6} Z`}
+        fill="#3fbf77"
+        opacity=".15"
+      />
+      <path d={d} fill="none" stroke="#8cebb3" strokeWidth="2.5" strokeLinejoin="round" />
+      <line
+        x1={pad}
+        x2={W - 10}
+        y1={H - pad + 6}
+        y2={H - pad + 6}
+        stroke="#ecf6f0"
+        strokeOpacity=".2"
+      />
+      <text x={pad} y={H - 6} fontSize="11" fill="#9cb9ae">
+        epoch 1
+      </text>
+      <text x={W - 10} y={H - 6} fontSize="11" textAnchor="end" fill="#9cb9ae">
+        epoch {loss.length}
+      </text>
+      <text x="4" y={Y(loss[0]) + 4} fontSize="11" fill="#9cb9ae">
+        {fmt(loss[0], 2)}
+      </text>
     </svg>
   )
 }

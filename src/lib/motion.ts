@@ -139,3 +139,22 @@ export function useCountUp(target: number, { duration = 1100, start = true, dela
   }, [target, duration, start, delay])
   return value
 }
+
+/* ------------------------------------------------------------------ */
+/* Sorot kursor                                                        */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Pasang pada onPointerMove elemen berkelas .sorot: cahaya lembut mengikuti kursor.
+ * Ditulis langsung ke style (tanpa re-render).
+ */
+export function trackSpotlight(e: {
+  currentTarget: HTMLElement
+  clientX: number
+  clientY: number
+}) {
+  const el = e.currentTarget
+  const r = el.getBoundingClientRect()
+  el.style.setProperty('--mx', `${e.clientX - r.left}px`)
+  el.style.setProperty('--my', `${e.clientY - r.top}px`)
+}

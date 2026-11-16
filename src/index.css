@@ -1,52 +1,95 @@
 @import 'tailwindcss';
 
 /*
- * Palet "Rimba Emas"
- * Rimba (hijau hutan gelap) memberi kesan megah dan tenang. Dua warna aksen selalu bermakna:
- * daun = organik, emas = anorganik, sama seperti dua tong di logo.
+ * Tema "Rimba Malam"
+ * Latar hijau hutan yang sangat gelap memberi kesan megah dan tenang, foto terlihat lebih hidup,
+ * dan warna aksen tetap bermakna di semua halaman: daun = organik, emas = anorganik.
  */
 @theme {
-  --color-rimba-950: #061a16;
+  --color-rimba-950: #03110d;
   --color-rimba-900: #0b2b26;
   --color-rimba-800: #113a33;
   --color-rimba-700: #1a4c43;
   --color-rimba-600: #2b6357;
 
+  --color-latar: #051a15;
+  --color-latar-2: #071f1a;
+  --color-panel: #0a241e;
+  --color-kartu: #0f2d26;
+  --color-kartu-2: #15392f;
+  --color-garis: #1f4138;
+  --color-garis-terang: #2e554a;
+
+  --color-teks: #ecf6f0;
+  --color-redup: #9cb9ae;
+  --color-mint-teks: #bfe3cf;
+
   --color-daun: #3fbf77;
   --color-daun-terang: #8cebb3;
   --color-daun-tua: #1f7a4d;
-  --color-mint: #e4f4ea;
+  --color-mint: #0f3a2c;
 
   --color-emas: #ffc247;
   --color-emas-terang: #ffe08f;
-  --color-emas-tua: #a86f00;
-  --color-krem: #fff4d6;
+  --color-emas-tua: #c98a0b;
+  --color-krem: #352b10;
 
-  --color-kertas: #f4f8f3;
-  --color-garis: #d3e3d8;
-  --color-teks: #0b2b26;
-  --color-redup: #4b6a62;
-  --color-koral: #d93f45;
+  --color-koral: #ff6b6b;
 
   --font-display: 'Poppins', ui-sans-serif, system-ui, sans-serif;
   --font-sans: 'Inter Variable', 'Inter', ui-sans-serif, system-ui, sans-serif;
 
-  --shadow-lembut: 0 1px 2px rgb(11 43 38 / 0.06), 0 8px 24px rgb(11 43 38 / 0.07);
-  --shadow-angkat: 0 2px 4px rgb(11 43 38 / 0.06), 0 22px 48px rgb(11 43 38 / 0.16);
+  --shadow-lembut: 0 1px 0 rgb(255 255 255 / 0.04) inset, 0 10px 30px -12px rgb(0 0 0 / 0.55);
+  --shadow-angkat: 0 1px 0 rgb(255 255 255 / 0.06) inset, 0 24px 60px -18px rgb(0 0 0 / 0.75);
+  --shadow-cahaya: 0 0 0 1px rgb(63 191 119 / 0.35), 0 18px 50px -14px rgb(63 191 119 / 0.45);
 
   --ease-keluar: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-pegas: cubic-bezier(0.34, 1.56, 0.64, 1);
 
-  --animate-masuk: masuk 0.5s var(--ease-keluar) both;
+  --animate-masuk: masuk 0.7s var(--ease-keluar) both;
   --animate-pindai: pindai 1.4s ease-in-out infinite;
   --animate-melayang: melayang 5s ease-in-out infinite;
   --animate-goyang: goyang 0.45s ease-in-out;
+  --animate-kenburns: kenburns 26s ease-in-out infinite alternate;
+  --animate-geser: geser 40s linear infinite;
 }
 
 @keyframes masuk {
   from {
     opacity: 0;
-    transform: translateY(14px);
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes masuk-blur {
+  from {
+    opacity: 0;
+    filter: blur(12px);
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: none;
+  }
+}
+@keyframes masuk-skala {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes masuk-kata {
+  from {
+    opacity: 0;
+    transform: translateY(105%) rotate(4deg);
   }
   to {
     opacity: 1;
@@ -73,7 +116,7 @@
     transform: translateY(0) rotate(var(--rot, 0deg));
   }
   50% {
-    transform: translateY(-9px) rotate(calc(var(--rot, 0deg) + 3deg));
+    transform: translateY(-8px) rotate(calc(var(--rot, 0deg) + 3deg));
   }
 }
 @keyframes goyang {
@@ -94,19 +137,50 @@
     transform: translateX(3px);
   }
 }
+@keyframes kenburns {
+  from {
+    transform: scale(1.08) translate3d(0, 0, 0);
+  }
+  to {
+    transform: scale(1.18) translate3d(-2%, -1.5%, 0);
+  }
+}
+@keyframes geser {
+  to {
+    transform: translateX(-50%);
+  }
+}
+@keyframes denyut {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
 
 @layer base {
   html {
-    background: var(--color-kertas);
+    background: var(--color-latar);
     color: var(--color-teks);
     font-family: var(--font-sans);
     -webkit-text-size-adjust: 100%;
-    scroll-padding-top: 5.5rem;
+    scroll-padding-top: 6rem;
+    color-scheme: dark;
+    /* Bilah gulir bawaan browser disembunyikan; posisi gulir ditampilkan oleh garis progres di header. */
+    scrollbar-width: none;
+  }
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar {
+    display: none;
   }
   body {
     min-height: 100dvh;
     margin: 0;
-    background: var(--color-kertas);
+    background: var(--color-latar);
     -webkit-tap-highlight-color: transparent;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
@@ -118,6 +192,7 @@
   h4 {
     font-family: var(--font-display);
     text-wrap: balance;
+    color: var(--color-teks);
   }
   p,
   li {
@@ -152,7 +227,12 @@
     position: absolute;
     inset: 0;
     z-index: -1;
-    background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / 0.38) 50%, transparent 70%);
+    background: linear-gradient(
+      110deg,
+      transparent 30%,
+      rgb(255 255 255 / 0.35) 50%,
+      transparent 70%
+    );
     transform: translateX(-110%);
     transition: transform 0.7s var(--ease-keluar);
   }
@@ -160,24 +240,77 @@
     transform: translateX(110%);
   }
 
-  /* Elemen yang muncul saat masuk layar. Atribut data-tampak dipasang oleh <Reveal>. */
-  .muncul {
-    opacity: 0;
-    transform: translateY(18px);
-    transition:
-      opacity 0.6s var(--ease-keluar),
-      transform 0.6s var(--ease-keluar);
-    transition-delay: var(--tunda, 0ms);
-  }
-  .muncul[data-tampak='1'] {
-    opacity: 1;
-    transform: none;
+  /* Kartu kaca gelap. */
+  .kartu {
+    position: relative;
+    background: linear-gradient(160deg, rgb(255 255 255 / 0.06), rgb(255 255 255 / 0.015));
+    border: 1px solid rgb(255 255 255 / 0.09);
+    box-shadow: var(--shadow-lembut);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
   }
 
-  /* Pola titik halus untuk latar gelap. */
+  /*
+   * Sorot: cahaya lembut yang mengikuti kursor di dalam kartu.
+   * Posisi diisi lewat --mx/--my oleh hook useSpotlight.
+   */
+  .sorot {
+    position: relative;
+    isolation: isolate;
+  }
+  .sorot::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: radial-gradient(
+      420px circle at var(--mx, 50%) var(--my, -40%),
+      rgb(63 191 119 / 0.16),
+      transparent 45%
+    );
+    opacity: 0;
+    transition: opacity 0.35s ease;
+    pointer-events: none;
+  }
+  .sorot:hover::before {
+    opacity: 1;
+  }
+
+  /* Pola titik halus. */
   .pola-titik {
-    background-image: radial-gradient(rgb(140 235 179 / 0.13) 1px, transparent 1px);
+    background-image: radial-gradient(rgb(140 235 179 / 0.12) 1px, transparent 1px);
     background-size: 22px 22px;
+  }
+  /* Pola garis kisi tipis. */
+  .pola-kisi {
+    background-image:
+      linear-gradient(rgb(255 255 255 / 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(255 255 255 / 0.035) 1px, transparent 1px);
+    background-size: 56px 56px;
+  }
+  /* Butiran halus (noise) agar gradien tidak terlihat datar. */
+  .butir::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.07;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* Teks bergradasi untuk judul besar. */
+  .teks-gradasi {
+    background: linear-gradient(
+      100deg,
+      #ffffff 10%,
+      var(--color-daun-terang) 55%,
+      var(--color-emas-terang) 95%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
 
   .angka {
@@ -185,7 +318,76 @@
   }
 
   .halaman-masuk {
-    animation: masuk 0.45s var(--ease-keluar) both;
+    animation: masuk 0.55s var(--ease-keluar) both;
+  }
+
+  /*
+   * Animasi masuk saat halaman dibuka. Pakai kelas .masuk + varian, dengan --tunda (ms) untuk berurutan.
+   */
+  .masuk {
+    animation: masuk 0.8s var(--ease-keluar) both;
+    animation-delay: var(--tunda, 0ms);
+  }
+  .masuk-blur {
+    animation: masuk-blur 0.9s var(--ease-keluar) both;
+    animation-delay: var(--tunda, 0ms);
+  }
+  .masuk-skala {
+    animation: masuk-skala 0.9s var(--ease-keluar) both;
+    animation-delay: var(--tunda, 0ms);
+  }
+  .kata {
+    display: inline-block;
+    overflow: hidden;
+    vertical-align: top;
+    padding-bottom: 0.08em;
+    margin-bottom: -0.08em;
+  }
+  .kata > span {
+    display: inline-block;
+    animation: masuk-kata 0.9s var(--ease-keluar) both;
+    animation-delay: var(--tunda, 0ms);
+  }
+
+  /*
+   * Muncul saat discroll. Atribut data-tampak dipasang oleh <Reveal>, varian lewat data-gaya.
+   */
+  .muncul {
+    opacity: 0;
+    transition:
+      opacity 0.8s var(--ease-keluar),
+      transform 0.8s var(--ease-keluar),
+      filter 0.8s var(--ease-keluar),
+      clip-path 1s var(--ease-keluar);
+    transition-delay: var(--tunda, 0ms);
+  }
+  .muncul[data-gaya='naik'] {
+    transform: translateY(28px);
+  }
+  .muncul[data-gaya='blur'] {
+    filter: blur(10px);
+    transform: translateY(14px);
+  }
+  .muncul[data-gaya='skala'] {
+    transform: scale(0.94);
+  }
+  .muncul[data-gaya='kiri'] {
+    transform: translateX(-36px);
+  }
+  .muncul[data-gaya='kanan'] {
+    transform: translateX(36px);
+  }
+  .muncul[data-gaya='tirai'] {
+    clip-path: inset(0 0 100% 0 round 2rem);
+    transform: translateY(20px);
+  }
+  .muncul[data-tampak='1'] {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+  .muncul[data-gaya='tirai'][data-tampak='1'] {
+    clip-path: inset(0 0 0 0 round 2rem);
   }
 }
 
@@ -202,11 +404,14 @@
   *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
   .muncul {
     opacity: 1;
     transform: none;
+    filter: none;
+    clip-path: none;
   }
 }
