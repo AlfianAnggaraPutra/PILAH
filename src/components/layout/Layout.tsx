@@ -25,11 +25,9 @@ function useScrolled(threshold = 24) {
 /** Bagian beranda yang sedang terlihat (#berita / #faq), untuk menandai menu aktif. */
 function useHomeSection(pathname: string) {
   const [section, setSection] = useState<string | null>(null)
+  const onHome = pathname === '/'
   useEffect(() => {
-    if (pathname !== '/') {
-      setSection(null)
-      return
-    }
+    if (!onHome) return
     const ids = ['berita', 'faq']
     const on = () => {
       let current: string | null = null
@@ -40,15 +38,16 @@ function useHomeSection(pathname: string) {
       }
       setSection(current)
     }
-    on()
+    const first = requestAnimationFrame(on)
     window.addEventListener('scroll', on, { passive: true })
     const t = setInterval(on, 600) // berjaga bila konten di atasnya berubah tinggi
     return () => {
+      cancelAnimationFrame(first)
       window.removeEventListener('scroll', on)
       clearInterval(t)
     }
-  }, [pathname])
-  return section
+  }, [onHome])
+  return onHome ? section : null
 }
 
 /** Garis progres gulir di batas bawah header (pengganti bilah gulir browser). */
@@ -78,11 +77,11 @@ function ScrollProgress() {
     }
   }, [])
   return (
-    <div aria-hidden className="absolute inset-x-0 bottom-0 h-[2px] bg-white/[0.06]">
+    <div aria-hidden className="absolute inset-x-0 bottom-0 h-0.5 bg-white/6">
       <div
         ref={ref}
         data-testid="scroll-progress"
-        className="from-daun via-daun-terang to-emas relative h-full origin-left bg-gradient-to-r will-change-transform"
+        className="from-daun via-daun-terang to-emas relative h-full origin-left bg-linear-to-r will-change-transform"
         style={{ transform: 'scaleX(0)' }}
       >
         <span className="bg-emas absolute top-1/2 right-0 size-1.5 translate-x-1/2 -translate-y-1/2 rounded-full shadow-[0_0_12px_3px_rgb(255_194_71/0.7)]" />
@@ -105,13 +104,13 @@ function TopBar() {
           : 'bg-latar/75 shadow-[0_10px_40px_-20px_rgb(0_0_0/0.8)] backdrop-blur-xl',
       )}
     >
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 md:h-[4.5rem]">
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 md:h-18">
         <Link
           to="/"
           className="group flex items-center gap-3 rounded-xl"
           aria-label="PILAH, ke beranda"
         >
-          <LogoMark className="h-8 transition-transform duration-500 ease-[cubic-bezier(.34,1.56,.64,1)] group-hover:scale-110 group-hover:-rotate-6" />
+          <LogoMark className="ease-pegas h-8 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-6" />
           <Wordmark className="text-[1.3rem] text-white" />
         </Link>
         <nav className="hidden items-center gap-1 md:flex" aria-label="Utama">
@@ -253,7 +252,7 @@ function Copyright() {
 function Footer({ minimal }: { minimal: boolean }) {
   if (minimal) {
     return (
-      <footer className="bg-latar border-t border-white/[0.06] pb-24 md:pb-0">
+      <footer className="bg-latar border-t border-white/6 pb-24 md:pb-0">
         <div className="mx-auto max-w-6xl px-5 py-6 sm:px-6">
           <Copyright />
         </div>
@@ -261,11 +260,11 @@ function Footer({ minimal }: { minimal: boolean }) {
     )
   }
   return (
-    <footer className="bg-rimba-950 relative overflow-hidden border-t border-white/[0.06] pb-24 md:pb-0">
+    <footer className="bg-rimba-950 relative overflow-hidden border-t border-white/6 pb-24 md:pb-0">
       <div aria-hidden className="pola-kisi absolute inset-0 opacity-60" />
       <div
         aria-hidden
-        className="bg-daun/10 pointer-events-none absolute -top-40 left-1/2 h-80 w-[50rem] -translate-x-1/2 rounded-full blur-3xl"
+        className="bg-daun/10 pointer-events-none absolute -top-40 left-1/2 h-80 w-200 -translate-x-1/2 rounded-full blur-3xl"
       />
       <div className="relative mx-auto grid max-w-6xl gap-10 px-5 pt-16 pb-10 sm:px-6 md:grid-cols-[1.4fr_1fr_1fr]">
         <div>
@@ -336,7 +335,7 @@ export function Layout({ children }: { children: ReactNode }) {
     <div className="flex min-h-dvh flex-col">
       <a
         href="#konten"
-        className="bg-emas text-rimba-900 fixed top-3 left-3 z-[60] -translate-y-24 rounded-full px-4 py-2 font-semibold opacity-0 transition-[transform,opacity] focus:translate-y-0 focus:opacity-100"
+        className="bg-emas text-rimba-900 fixed top-3 left-3 z-60 -translate-y-24 rounded-full px-4 py-2 font-semibold opacity-0 transition-[transform,opacity] focus:translate-y-0 focus:opacity-100"
       >
         Langsung ke konten
       </a>

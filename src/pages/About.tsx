@@ -100,7 +100,7 @@ function Hero() {
               e.preventDefault()
               document.getElementById('cara-kerja')?.scrollIntoView({ behavior: 'smooth' })
             }}
-            className="kilau font-display inline-flex h-14 items-center gap-2 rounded-full bg-white/[0.06] px-7 font-semibold text-white ring-1 ring-white/15 backdrop-blur transition-[background-color,transform] duration-300 hover:-translate-y-0.5 hover:bg-white/[0.11]"
+            className="kilau font-display inline-flex h-14 items-center gap-2 rounded-full bg-white/6 px-7 font-semibold text-white ring-1 ring-white/15 backdrop-blur transition-[background-color,transform] duration-300 hover:-translate-y-0.5 hover:bg-white/11"
           >
             Lihat cara kerjanya
           </a>
@@ -115,9 +115,9 @@ function SubNav() {
   return (
     <nav
       aria-label="Bagian halaman"
-      className="bg-latar/80 sticky top-16 z-30 border-y border-white/[0.06] backdrop-blur-xl md:top-[4.5rem]"
+      className="bg-latar/80 sticky top-16 z-30 border-y border-white/6 backdrop-blur-xl md:top-18"
     >
-      <ul className="mx-auto flex max-w-6xl [scrollbar-width:none] gap-1 overflow-x-auto px-3 py-2 sm:px-5 [&::-webkit-scrollbar]:hidden">
+      <ul className="mx-auto flex max-w-6xl scrollbar-none gap-1 overflow-x-auto px-3 py-2 sm:px-5 [&::-webkit-scrollbar]:hidden">
         {SECTIONS.map((s) => (
           <li key={s.id} className="shrink-0">
             <a
@@ -131,7 +131,7 @@ function SubNav() {
                 'block rounded-full px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors duration-300',
                 active === s.id
                   ? 'bg-emas text-rimba-950'
-                  : 'text-redup hover:bg-white/[0.06] hover:text-white',
+                  : 'text-redup hover:bg-white/6 hover:text-white',
               )}
             >
               {s.label}
@@ -183,7 +183,7 @@ function Background() {
             <Reveal key={title} gaya="kanan" delay={i * 110}>
               <div
                 onPointerMove={trackSpotlight}
-                className="kartu sorot group flex gap-4 rounded-[1.5rem] p-5 transition-[transform,border-color] duration-500 hover:-translate-y-0.5 hover:border-white/20"
+                className="kartu sorot group flex gap-4 rounded-3xl p-5 transition-[transform,border-color] duration-500 hover:-translate-y-0.5 hover:border-white/20"
               >
                 <span className="bg-daun/15 text-daun-terang grid size-11 shrink-0 place-items-center rounded-2xl transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6">
                   <Icon name={icon} size={21} />
@@ -222,7 +222,7 @@ function HowItWorks() {
     >
       <div
         aria-hidden
-        className="pola-kisi absolute inset-0 [mask-image:radial-gradient(70%_50%_at_50%_20%,black,transparent)]"
+        className="pola-kisi absolute inset-0 mask-[radial-gradient(70%_50%_at_50%_20%,black,transparent)]"
       />
       <div className="relative mx-auto max-w-6xl px-5 sm:px-6">
         <SectionHead title="Cara kerja CNN di PILAH">
@@ -234,7 +234,7 @@ function HowItWorks() {
         </SectionHead>
 
         <Reveal gaya="naik" className="mt-10">
-          <ol className="flex snap-x [scrollbar-width:none] gap-2 overflow-x-auto pb-3 lg:grid lg:grid-cols-7 lg:overflow-visible">
+          <ol className="flex snap-x scrollbar-none gap-2 overflow-x-auto pb-3 lg:grid lg:grid-cols-7 lg:overflow-visible">
             {PIPELINE.map((p, i) => (
               <li key={p.id} className="relative shrink-0 snap-start lg:shrink">
                 <button
@@ -283,7 +283,7 @@ function HowItWorks() {
         </Reveal>
 
         <div className="mt-14 grid gap-6">
-          <Reveal gaya="skala" className="kartu rounded-[2rem] p-6 sm:p-8">
+          <Reveal gaya="skala" className="kartu rounded-4xl p-6 sm:p-8">
             <h3 className="text-xl font-bold">Coba sendiri: konvolusi</h3>
             <p className="text-redup mt-2 mb-6 max-w-2xl">
               Angka contoh dari makalah. Kernel menimpa jendela 3 × 3, setiap pasangan angka
@@ -292,12 +292,12 @@ function HowItWorks() {
             <ConvDemo />
           </Reveal>
           <div className="grid gap-6 lg:grid-cols-2">
-            <Reveal gaya="kiri" className="kartu rounded-[2rem] p-6 sm:p-8">
+            <Reveal gaya="kiri" className="kartu rounded-4xl p-6 sm:p-8">
               <h3 className="text-xl font-bold">Max pooling 2 × 2</h3>
               <p className="text-redup mt-2 mb-6">Peta 4 × 4 diringkas menjadi 2 × 2.</p>
               <PoolDemo />
             </Reveal>
-            <Reveal gaya="kanan" delay={100} className="kartu rounded-[2rem] p-6 sm:p-8">
+            <Reveal gaya="kanan" delay={100} className="kartu rounded-4xl p-6 sm:p-8">
               <h3 className="text-xl font-bold">Sigmoid dan keputusan kelas</h3>
               <p className="text-redup mt-2 mb-6">
                 Nilai y_in diubah menjadi peluang antara 0 dan 1.
@@ -308,7 +308,7 @@ function HowItWorks() {
         </div>
 
         <Reveal gaya="tirai" className="mt-6">
-          <div className="butir relative overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(135deg,var(--color-kartu-2),var(--color-rimba-950))] p-6 sm:p-10">
+          <div className="butir relative overflow-hidden rounded-4xl border border-white/10 bg-[linear-gradient(135deg,var(--color-kartu-2),var(--color-rimba-950))] p-6 sm:p-10">
             <div
               aria-hidden
               className="bg-emas/10 pointer-events-none absolute -top-24 -right-24 size-80 rounded-full blur-3xl"
@@ -345,7 +345,7 @@ function HowItWorks() {
                   ].map(([k, v, l, tip]) => (
                     <li key={k} className="min-w-0">
                       <Tooltip tip={tip} className="w-full">
-                        <span className="block w-full rounded-2xl bg-white/[0.05] px-3 py-3.5 ring-1 ring-white/10 transition-colors duration-300 hover:bg-white/[0.09] sm:p-4">
+                        <span className="block w-full rounded-2xl bg-white/5 px-3 py-3.5 ring-1 ring-white/10 transition-colors duration-300 hover:bg-white/9 sm:p-4">
                           <span className="text-redup block text-xs">{l}</span>
                           <span className="font-display text-emas angka mt-1 block text-base font-bold sm:text-xl sm:whitespace-nowrap">
                             {k} = {v}
@@ -367,7 +367,7 @@ function HowItWorks() {
                 ].map(([layer, f, note], i) => (
                   <li
                     key={layer}
-                    className="group flex items-center gap-4 rounded-2xl bg-white/[0.04] px-4 py-3 ring-1 ring-white/10 transition-[background-color,transform] duration-300 hover:translate-x-1 hover:bg-white/[0.08]"
+                    className="group flex items-center gap-4 rounded-2xl bg-white/4 px-4 py-3 ring-1 ring-white/10 transition-[background-color,transform] duration-300 hover:translate-x-1 hover:bg-white/8"
                   >
                     <span className="bg-emas font-display text-rimba-950 grid size-7 shrink-0 place-items-center rounded-full text-xs font-bold transition-transform duration-300 group-hover:scale-110">
                       {i + 1}
@@ -432,14 +432,14 @@ function ModelSection() {
       </SectionHead>
 
       <div className="mt-10 grid gap-6 lg:grid-cols-2">
-        <Reveal gaya="kiri" className="kartu rounded-[2rem] p-6 sm:p-8">
+        <Reveal gaya="kiri" className="kartu rounded-4xl p-6 sm:p-8">
           <h3 className="font-display flex items-center gap-2 text-lg font-semibold">
             <Icon name="database" size={20} className="text-daun-terang" /> Alur data
           </h3>
           <ol className="relative mt-6 space-y-5">
             <span
               aria-hidden
-              className="from-daun/60 to-emas/40 absolute top-3 bottom-3 left-4 w-px bg-gradient-to-b"
+              className="from-daun/60 to-emas/40 absolute top-3 bottom-3 left-4 w-px bg-linear-to-b"
             />
             {[
               [
@@ -475,7 +475,7 @@ function ModelSection() {
           </a>
         </Reveal>
 
-        <Reveal gaya="kanan" delay={100} className="kartu rounded-[2rem] p-6 sm:p-8">
+        <Reveal gaya="kanan" delay={100} className="kartu rounded-4xl p-6 sm:p-8">
           <h3 className="font-display flex items-center gap-2 text-lg font-semibold">
             <Icon name="layers" size={20} className="text-daun-terang" /> Arsitektur dan parameter
           </h3>
@@ -497,7 +497,7 @@ function ModelSection() {
               ].map(([a, b, c]) => (
                 <tr
                   key={a}
-                  className="border-b border-white/[0.06] transition-colors duration-200 hover:bg-white/[0.04]"
+                  className="border-b border-white/6 transition-colors duration-200 hover:bg-white/4"
                 >
                   <td className="py-2.5 pr-2 text-white">{a}</td>
                   <td className="text-redup py-2.5 pr-2">{b}</td>
@@ -517,7 +517,7 @@ function ModelSection() {
       </div>
 
       <Reveal gaya="skala" className="mt-6" id="evaluasi">
-        <div className="butir relative overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(135deg,var(--color-kartu-2),var(--color-rimba-950))] p-6 sm:p-8">
+        <div className="butir relative overflow-hidden rounded-4xl border border-white/10 bg-[linear-gradient(135deg,var(--color-kartu-2),var(--color-rimba-950))] p-6 sm:p-8">
           <h3 className="font-display text-lg font-semibold">Hasil evaluasi pada 400 citra uji</h3>
           {m ? (
             <>
@@ -584,7 +584,7 @@ function ModelSection() {
                   </table>
                 )}
                 {tr?.lossHistory && tr.lossHistory.length > 1 && (
-                  <div className="rounded-2xl bg-white/[0.04] p-4 ring-1 ring-white/10">
+                  <div className="rounded-2xl bg-white/4 p-4 ring-1 ring-white/10">
                     <p className="mb-2 text-sm font-semibold text-white">
                       Rata-rata error per epoch ({tr.epochs} epoch,{' '}
                       {tr.trainSize.toLocaleString('id-ID')} citra latih)
@@ -605,7 +605,7 @@ function ModelSection() {
       </Reveal>
 
       <Reveal gaya="naik" className="mt-6">
-        <div className="border-emas/25 bg-krem/50 rounded-[2rem] border p-6 sm:p-8">
+        <div className="border-emas/25 bg-krem/50 rounded-4xl border p-6 sm:p-8">
           <h3 className="font-display flex items-center gap-2 text-lg font-semibold">
             <Icon name="alert" size={20} className="text-emas" /> Batasan yang perlu kamu tahu
           </h3>
@@ -633,7 +633,7 @@ function Team() {
     <section id="tim" className="bg-latar-2 relative scroll-mt-12 overflow-hidden py-24 md:py-28">
       <div
         aria-hidden
-        className="pola-titik absolute inset-0 [mask-image:radial-gradient(60%_60%_at_50%_40%,black,transparent)] opacity-40"
+        className="pola-titik absolute inset-0 mask-[radial-gradient(60%_60%_at_50%_40%,black,transparent)] opacity-40"
       />
       <div className="relative mx-auto max-w-6xl px-5 sm:px-6">
         <SectionHead title="Tim pengembang">
@@ -654,8 +654,8 @@ function Team() {
                   className={cn(
                     'font-display text-rimba-950 grid size-20 shrink-0 place-items-center rounded-[1.4rem] text-2xl font-bold transition-transform duration-500 group-hover:scale-105 group-hover:-rotate-6',
                     i === 0
-                      ? 'from-daun-terang to-daun bg-gradient-to-br'
-                      : 'from-emas-terang to-emas bg-gradient-to-br',
+                      ? 'from-daun-terang to-daun bg-linear-to-br'
+                      : 'from-emas-terang to-emas bg-linear-to-br',
                   )}
                   aria-hidden
                 >
@@ -696,7 +696,7 @@ function Team() {
             ] as [IconName, string, string][]
           ).map(([icon, t, d], i) => (
             <Reveal key={t} gaya="naik" delay={i * 90}>
-              <div className="group h-full rounded-2xl bg-white/[0.03] p-5 ring-1 ring-white/10 transition-[background-color,transform] duration-300 hover:-translate-y-0.5 hover:bg-white/[0.06]">
+              <div className="group h-full rounded-2xl bg-white/3 p-5 ring-1 ring-white/10 transition-[background-color,transform] duration-300 hover:-translate-y-0.5 hover:bg-white/6">
                 <Icon
                   name={icon}
                   size={20}

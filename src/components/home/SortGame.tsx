@@ -234,7 +234,7 @@ export function SortGame() {
     <div className="relative">
       <div
         ref={wrapRef}
-        className="relative mx-auto w-full max-w-[30rem] touch-none select-none"
+        className="relative mx-auto w-full max-w-120 touch-none select-none"
         style={{ height: H * scale }}
         data-testid="sort-game"
       >
@@ -376,7 +376,7 @@ export function SortGame() {
                 </span>
                 <span
                   className={cn(
-                    'mt-1.5 h-[3px] rounded-full transition-[width,opacity] duration-300',
+                    'mt-1.5 h-0.75 rounded-full transition-[width,opacity] duration-300',
                     kind === 'organik' ? 'bg-daun' : 'bg-emas',
                     lit ? 'w-16 opacity-100' : 'w-8 opacity-60',
                   )}
@@ -428,7 +428,7 @@ export function SortGame() {
         </p>
         <span
           data-testid="skor"
-          className="font-display angka shrink-0 rounded-full bg-white/[0.08] px-3 py-1 text-xs font-semibold text-white ring-1 ring-white/15"
+          className="font-display angka shrink-0 rounded-full bg-white/8 px-3 py-1 text-xs font-semibold text-white ring-1 ring-white/15"
         >
           {done.size}/{items.length}
         </span>

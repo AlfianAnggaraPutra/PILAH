@@ -294,7 +294,7 @@ export function SplashScreen({
       aria-modal="true"
       aria-label={`${BRAND.name}: ${BRAND.slogan}`}
       data-testid="splash"
-      className="bg-latar fixed inset-0 z-[100] flex items-center justify-center overflow-hidden"
+      className="bg-latar fixed inset-0 z-100 flex items-center justify-center overflow-hidden"
     >
       <div aria-hidden className="pola-titik absolute inset-0 opacity-70" />
       <div
@@ -393,7 +393,7 @@ export function SplashScreen({
           <span
             data-rule
             aria-hidden
-            className="from-daun to-emas mt-4 block h-[3px] w-24 origin-left rounded-full bg-gradient-to-r min-[900px]:mt-5"
+            className="from-daun to-emas mt-4 block h-0.75 w-24 origin-left rounded-full bg-linear-to-r min-[900px]:mt-5"
           />
           <p
             data-slogan

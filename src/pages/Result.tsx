@@ -91,14 +91,14 @@ function SplitBar({ y }: { y: number }) {
           Anorganik {fmt(pAno, 1)}% <span className="bg-emas size-2.5 rounded-full" />
         </span>
       </div>
-      <div className="relative mt-2.5 flex h-3 overflow-hidden rounded-full bg-white/[0.08]">
+      <div className="relative mt-2.5 flex h-3 overflow-hidden rounded-full bg-white/8">
         <div
-          className="bg-daun h-full rounded-l-full transition-[width] duration-1000 ease-[cubic-bezier(.22,1,.36,1)]"
+          className="bg-daun ease-keluar h-full rounded-l-full transition-[width] duration-1000"
           style={{ width: go ? `${pOrg}%` : '0%' }}
         />
         <div className="flex-1" />
         <div
-          className="bg-emas h-full rounded-r-full transition-[width] duration-1000 ease-[cubic-bezier(.22,1,.36,1)]"
+          className="bg-emas ease-keluar h-full rounded-r-full transition-[width] duration-1000"
           style={{ width: go ? `${pAno}%` : '0%' }}
         />
         <span aria-hidden className="bg-latar absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2" />
@@ -110,7 +110,7 @@ function SplitBar({ y }: { y: number }) {
 function Empty() {
   return (
     <section className="mx-auto flex min-h-[80vh] max-w-xl flex-col items-center justify-center px-5 pt-28 pb-20 text-center">
-      <span className="masuk-skala text-daun-terang grid size-20 place-items-center rounded-3xl bg-white/[0.06] ring-1 ring-white/10">
+      <span className="masuk-skala text-daun-terang grid size-20 place-items-center rounded-3xl bg-white/6 ring-1 ring-white/10">
         <Icon name="scan" size={34} strokeWidth={1.7} />
       </span>
       <h1 className="masuk mt-6 text-3xl font-bold" style={delay(100)}>
@@ -135,10 +135,7 @@ export default function Result() {
 
   // Halaman dimuat ulang: pulihkan pindaian terakhir dari riwayat sesi dan hitung ulang.
   useEffect(() => {
-    if (result || history.length === 0) {
-      setRestoring(false)
-      return
-    }
+    if (result || history.length === 0) return
     let dead = false
     const item = history.find((h) => h.id === currentId) ?? history[0]
     classifyInput(decodeGray(item.gray))
@@ -180,7 +177,7 @@ export default function Result() {
       <div
         aria-hidden
         className={cn(
-          'pointer-events-none absolute inset-x-0 top-0 -z-10 h-[40rem]',
+          'pointer-events-none absolute inset-x-0 top-0 -z-10 h-160',
           uncertain
             ? 'bg-[radial-gradient(50%_60%_at_30%_20%,rgb(255_255_255/0.07),transparent_70%)]'
             : org
@@ -190,7 +187,7 @@ export default function Result() {
       />
       <div
         aria-hidden
-        className="pola-titik absolute inset-x-0 top-0 -z-10 h-[40rem] [mask-image:linear-gradient(to_bottom,black,transparent)] opacity-40"
+        className="pola-titik absolute inset-x-0 top-0 -z-10 h-160 mask-[linear-gradient(to_bottom,black,transparent)] opacity-40"
       />
 
       <div className="mx-auto max-w-6xl px-5 pt-28 pb-20 sm:px-6 md:pt-32">
@@ -211,8 +208,8 @@ export default function Result() {
           {/* Kiri: animasi masuk tong */}
           <div
             className={cn(
-              'pola-titik relative flex min-h-[22rem] flex-col items-center justify-between gap-6 p-6 lg:min-h-[28rem]',
-              uncertain ? 'bg-white/[0.03]' : org ? 'bg-mint/70' : 'bg-krem/70',
+              'pola-titik relative flex min-h-88 flex-col items-center justify-between gap-6 p-6 lg:min-h-112',
+              uncertain ? 'bg-white/3' : org ? 'bg-mint/70' : 'bg-krem/70',
             )}
           >
             <span
@@ -303,7 +300,7 @@ export default function Result() {
         <div className="mt-6 grid gap-6 md:grid-cols-[1.2fr_1fr]">
           <Reveal gaya="naik" className="h-full">
             {uncertain ? (
-              <div className="kartu h-full rounded-[2rem] p-7">
+              <div className="kartu h-full rounded-4xl p-7">
                 <h2 className="font-display flex items-center gap-2.5 text-lg font-semibold">
                   <Icon name="camera" size={20} className="text-emas" /> Coba foto ulang seperti ini
                 </h2>
@@ -320,7 +317,7 @@ export default function Result() {
               </div>
             ) : (
               <div
-                className={cn('kartu h-full rounded-[2rem] p-7', org ? 'bg-mint/40' : 'bg-krem/40')}
+                className={cn('kartu h-full rounded-4xl p-7', org ? 'bg-mint/40' : 'bg-krem/40')}
               >
                 <h2 className="font-display flex items-center gap-2.5 text-lg font-semibold">
                   <Icon
@@ -345,14 +342,14 @@ export default function Result() {
                     </li>
                   ))}
                 </ol>
-                <p className="mt-6 inline-flex items-center gap-2 rounded-full bg-white/[0.08] px-4 py-2 text-sm text-white ring-1 ring-white/10">
+                <p className="mt-6 inline-flex items-center gap-2 rounded-full bg-white/8 px-4 py-2 text-sm text-white ring-1 ring-white/10">
                   Bisa diolah menjadi: {g.becomes.toLowerCase()}
                 </p>
               </div>
             )}
           </Reveal>
           <Reveal gaya="naik" delay={120} className="h-full">
-            <div className="kartu h-full rounded-[2rem] p-7">
+            <div className="kartu h-full rounded-4xl p-7">
               <h2 className="font-display flex items-center gap-2.5 text-lg font-semibold">
                 <Icon name="info" size={20} className="text-daun-terang" /> Tentang hasil ini
               </h2>
@@ -390,7 +387,7 @@ export default function Result() {
             aria-expanded={showProcess}
             aria-controls="proses"
             onClick={() => setShowProcess((s) => !s)}
-            className="group flex w-full items-center justify-between gap-4 rounded-[1.5rem] border border-white/10 bg-white/[0.03] px-6 py-5 text-left transition-colors hover:bg-white/[0.06]"
+            className="group flex w-full items-center justify-between gap-4 rounded-3xl border border-white/10 bg-white/3 px-6 py-5 text-left transition-colors hover:bg-white/6"
           >
             <span>
               <span className="font-display block text-lg font-semibold text-white">
@@ -402,7 +399,7 @@ export default function Result() {
             </span>
             <span
               className={cn(
-                'grid size-10 shrink-0 place-items-center rounded-full bg-white/[0.08] transition-transform duration-500',
+                'grid size-10 shrink-0 place-items-center rounded-full bg-white/8 transition-transform duration-500',
                 showProcess && 'bg-emas text-rimba-950 rotate-180',
               )}
             >
@@ -411,7 +408,7 @@ export default function Result() {
           </button>
           <div
             className={cn(
-              'grid transition-[grid-template-rows,opacity] duration-700 ease-[cubic-bezier(.22,1,.36,1)]',
+              'ease-keluar grid transition-[grid-template-rows,opacity] duration-700',
               showProcess ? 'mt-4 grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0',
             )}
           >

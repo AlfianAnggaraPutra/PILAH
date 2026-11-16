@@ -78,7 +78,7 @@ export function ConvDemo() {
                   inWin
                     ? 'bg-emas text-rimba-950'
                     : v === 0
-                      ? 'text-redup bg-white/[0.05]'
+                      ? 'text-redup bg-white/5'
                       : 'bg-daun/15 text-mint-teks',
                 )}
               >
@@ -125,7 +125,7 @@ export function ConvDemo() {
                   ? 'bg-emas text-rimba-950 scale-105 ring-2 ring-white'
                   : idx < pos
                     ? 'bg-daun/80 text-rimba-950'
-                    : 'text-redup bg-white/[0.06]',
+                    : 'text-redup bg-white/6',
               )}
             >
               {idx <= pos ? fmt(v, 2) : '?'}
@@ -135,7 +135,7 @@ export function ConvDemo() {
       </div>
       <div className="w-full">
         <p
-          className="angka rounded-2xl bg-white/[0.05] p-4 text-sm leading-relaxed ring-1 ring-white/10"
+          className="angka rounded-2xl bg-white/5 p-4 text-sm leading-relaxed ring-1 ring-white/10"
           aria-live="polite"
         >
           C
@@ -161,7 +161,7 @@ export function ConvDemo() {
               setPlaying(false)
               setPos((p) => (p + 1) % 9)
             }}
-            className="inline-flex h-10 items-center gap-2 rounded-full px-4 text-sm font-semibold ring-1 ring-white/15 transition-colors hover:bg-white/[0.06]"
+            className="inline-flex h-10 items-center gap-2 rounded-full px-4 text-sm font-semibold ring-1 ring-white/15 transition-colors hover:bg-white/6"
           >
             Geser kernel <Icon name="arrowRight" size={15} />
           </button>
@@ -212,7 +212,7 @@ export function PoolDemo() {
                 className={cn(
                   cell,
                   'cursor-default transition-all duration-200',
-                  win === null || win === w ? WIN_SOFT[w] : 'text-redup/50 bg-white/[0.03]',
+                  win === null || win === w ? WIN_SOFT[w] : 'text-redup/50 bg-white/3',
                   isMax &&
                     (win === w
                       ? `${WIN_COLORS[w]} text-rimba-950 ring-2 ring-white`
@@ -339,7 +339,7 @@ export function SigmoidDemo() {
             </strong>
           </p>
         </div>
-        <div className="rounded-2xl bg-white/[0.05] p-4 text-sm ring-1 ring-white/10">
+        <div className="rounded-2xl bg-white/5 p-4 text-sm ring-1 ring-white/10">
           <p className="font-semibold">Error BCE untuk tebakan ini</p>
           <p className="angka mt-2">
             jika target t = 1: L = −ln y = <strong>{fmt(L1, 4)}</strong>

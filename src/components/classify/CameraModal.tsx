@@ -52,7 +52,6 @@ export function CameraModal({
 
   useEffect(() => {
     let cancelled = false
-    setReady(false)
     navigator.mediaDevices
       .getUserMedia({
         video: { facingMode: { ideal: facing }, width: { ideal: 1280 }, height: { ideal: 960 } },
@@ -123,7 +122,7 @@ export function CameraModal({
       role="dialog"
       aria-modal="true"
       aria-label="Kamera"
-      className="bg-rimba-950 halaman-masuk fixed inset-0 z-[90] flex flex-col"
+      className="bg-rimba-950 halaman-masuk fixed inset-0 z-90 flex flex-col"
     >
       <div className="relative flex-1 overflow-hidden">
         <video
@@ -189,7 +188,10 @@ export function CameraModal({
         </button>
         <button
           type="button"
-          onClick={() => setFacing((f) => (f === 'environment' ? 'user' : 'environment'))}
+          onClick={() => {
+            setReady(false)
+            setFacing((f) => (f === 'environment' ? 'user' : 'environment'))
+          }}
           disabled={!multi}
           className="grid size-12 place-items-center rounded-full bg-white/10 text-white ring-1 ring-white/20 hover:bg-white/20 disabled:invisible"
           aria-label="Ganti kamera depan/belakang"

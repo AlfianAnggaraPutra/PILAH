@@ -56,7 +56,7 @@ function Hero() {
   return (
     <section
       onPointerMove={trackSpotlight}
-      className="sorot butir relative isolate flex min-h-[100svh] items-center overflow-hidden"
+      className="sorot butir relative isolate flex min-h-svh items-center overflow-hidden"
     >
       <BgPhoto id={PHOTOS.hero.id} eager className="opacity-60" imgClassName="animate-kenburns" />
       <div
@@ -72,7 +72,7 @@ function Hero() {
       <div className="relative mx-auto grid w-full max-w-6xl items-center gap-12 px-5 pt-28 pb-24 sm:px-6 md:pt-32 lg:grid-cols-[1fr_1.02fr] lg:gap-8">
         <div className="max-w-xl">
           <p
-            className="masuk-blur text-mint-teks inline-flex items-center gap-2.5 rounded-full bg-white/[0.06] py-1.5 pr-4 pl-2 text-sm ring-1 ring-white/10 backdrop-blur"
+            className="masuk-blur text-mint-teks inline-flex items-center gap-2.5 rounded-full bg-white/6 py-1.5 pr-4 pl-2 text-sm ring-1 ring-white/10 backdrop-blur"
             style={delay(50)}
           >
             <span className="bg-daun/20 relative grid size-6 place-items-center rounded-full">
@@ -117,7 +117,7 @@ function Hero() {
           </ul>
         </div>
 
-        <div className="masuk-skala kartu relative rounded-[2rem] p-4 sm:p-6" style={delay(450)}>
+        <div className="masuk-skala kartu relative rounded-4xl p-4 sm:p-6" style={delay(450)}>
           <div className="mb-3 flex items-center justify-between px-1">
             <p className="font-display text-emas-terang text-sm font-semibold">
               Coba dulu, sebelum memotret
@@ -201,7 +201,7 @@ function Steps() {
     <section className="bg-latar-2 relative overflow-hidden py-24 md:py-28">
       <div
         aria-hidden
-        className="pola-kisi absolute inset-0 [mask-image:radial-gradient(60%_70%_at_50%_50%,black,transparent)]"
+        className="pola-kisi absolute inset-0 mask-[radial-gradient(60%_70%_at_50%_50%,black,transparent)]"
       />
       <div className="relative mx-auto max-w-6xl px-5 sm:px-6">
         <Reveal gaya="blur" className="mx-auto max-w-2xl text-center">
@@ -213,7 +213,7 @@ function Steps() {
         <ol className="relative mt-14 grid gap-5 md:grid-cols-3">
           <li
             aria-hidden
-            className="from-daun/0 via-daun/50 to-emas/0 pointer-events-none absolute top-[3.6rem] right-[17%] left-[17%] hidden h-px bg-gradient-to-r md:block"
+            className="from-daun/0 via-daun/50 to-emas/0 pointer-events-none absolute top-[3.6rem] right-[17%] left-[17%] hidden h-px bg-linear-to-r md:block"
           />
           {STEPS.map((s, i) => (
             <Reveal as="li" key={s.title} delay={i * 140} gaya="naik">
@@ -221,7 +221,7 @@ function Steps() {
                 onPointerMove={trackSpotlight}
                 className="kartu sorot group hover:border-daun/40 hover:shadow-cahaya h-full rounded-[1.75rem] p-7 text-center transition-[transform,border-color,box-shadow] duration-500 hover:-translate-y-1.5"
               >
-                <span className="from-daun to-daun-tua text-rimba-950 relative mx-auto grid size-14 place-items-center rounded-2xl bg-gradient-to-br shadow-[0_10px_30px_-10px_rgb(63_191_119/0.7)] transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-6">
+                <span className="from-daun to-daun-tua text-rimba-950 relative mx-auto grid size-14 place-items-center rounded-2xl bg-linear-to-br shadow-[0_10px_30px_-10px_rgb(63_191_119/0.7)] transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-6">
                   <Icon name={s.icon} size={24} />
                   <span className="bg-emas font-display text-rimba-950 ring-latar-2 absolute -top-2 -right-2 grid size-6 place-items-center rounded-full text-xs font-bold ring-4">
                     {i + 1}
@@ -257,7 +257,7 @@ function Guide() {
             <div
               role="tablist"
               aria-label="Jenis sampah"
-              className="inline-flex rounded-full bg-white/[0.05] p-1.5 ring-1 ring-white/10"
+              className="inline-flex rounded-full bg-white/5 p-1.5 ring-1 ring-white/10"
             >
               {(['organik', 'anorganik'] as const).map((k) => (
                 <button
@@ -321,7 +321,7 @@ function Guide() {
                       <img
                         src={it.src}
                         alt={it.label}
-                        className="size-14 transition-transform duration-500 ease-[cubic-bezier(.34,1.56,.64,1)] hover:-translate-y-2 hover:scale-110 hover:rotate-6 sm:size-16"
+                        className="ease-pegas size-14 transition-transform duration-500 hover:-translate-y-2 hover:scale-110 hover:rotate-6 sm:size-16"
                       />
                     </Tooltip>
                   </li>
@@ -340,7 +340,7 @@ function Guide() {
                 {g.examples.map((e) => (
                   <li
                     key={e}
-                    className="rounded-full bg-white/[0.08] px-3.5 py-1.5 text-sm text-white ring-1 ring-white/10 transition-[background-color,transform] duration-300 hover:-translate-y-0.5 hover:bg-white/15"
+                    className="rounded-full bg-white/8 px-3.5 py-1.5 text-sm text-white ring-1 ring-white/10 transition-[background-color,transform] duration-300 hover:-translate-y-0.5 hover:bg-white/15"
                   >
                     {e}
                   </li>
@@ -362,7 +362,7 @@ function Guide() {
                   </li>
                 ))}
               </ol>
-              <p className="mt-7 inline-flex items-center gap-2 rounded-full bg-white/[0.08] px-4 py-2 text-sm font-medium text-white ring-1 ring-white/10">
+              <p className="mt-7 inline-flex items-center gap-2 rounded-full bg-white/8 px-4 py-2 text-sm font-medium text-white ring-1 ring-white/10">
                 <Icon
                   name={org ? 'leaf' : 'recycle'}
                   size={17}

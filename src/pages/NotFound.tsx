@@ -135,7 +135,7 @@ export default function NotFound() {
     <section className="relative mx-auto flex min-h-[88vh] max-w-3xl flex-col items-center overflow-hidden px-5 pt-24 pb-16 text-center sm:pt-28">
       <span
         aria-hidden
-        className="font-display pointer-events-none absolute top-16 left-1/2 -translate-x-1/2 text-[min(44vw,14rem)] leading-none font-bold text-white/[0.04] select-none"
+        className="font-display pointer-events-none absolute top-16 left-1/2 -translate-x-1/2 text-[min(44vw,14rem)] leading-none font-bold text-white/4 select-none"
       >
         404
       </span>
@@ -164,7 +164,7 @@ export default function NotFound() {
               onPointerDown={down}
               onPointerMove={move}
               onPointerUp={up}
-              className="absolute top-6 left-1/2 z-20 -ml-[38px] cursor-grab touch-none active:cursor-grabbing"
+              className="absolute top-6 left-1/2 z-20 -ml-9.5 cursor-grab touch-none active:cursor-grabbing"
               style={{ width: ITEM, height: ITEM, transform: 'rotate(-8deg)' }}
             >
               <img

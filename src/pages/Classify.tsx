@@ -105,7 +105,7 @@ function ProcessingOverlay({ result, stage }: { result: Classification | null; s
             className="halaman-masuk size-full"
           />
         )}
-        <div className="animate-pindai via-daun/60 absolute inset-x-0 top-0 h-1/4 bg-gradient-to-b from-transparent to-transparent" />
+        <div className="animate-pindai via-daun/60 absolute inset-x-0 top-0 h-1/4 bg-linear-to-b from-transparent to-transparent" />
       </div>
       <ol className="w-full max-w-xs space-y-1.5 text-sm" aria-live="polite">
         {STAGES.map((s, i) => (
@@ -384,15 +384,15 @@ export default function Classify() {
     <div className="relative isolate overflow-hidden">
       <BgPhoto
         id={PHOTOS.pindai.id}
-        className="-z-10 h-[34rem] [mask-image:linear-gradient(to_bottom,black,transparent)] opacity-25"
+        className="-z-10 h-136 mask-[linear-gradient(to_bottom,black,transparent)] opacity-25"
       />
       <div
         aria-hidden
-        className="pola-titik absolute inset-x-0 top-0 -z-10 h-[34rem] [mask-image:linear-gradient(to_bottom,black,transparent)] opacity-50"
+        className="pola-titik absolute inset-x-0 top-0 -z-10 h-136 mask-[linear-gradient(to_bottom,black,transparent)] opacity-50"
       />
       <div
         aria-hidden
-        className="bg-daun/10 pointer-events-none absolute top-20 right-[-10%] -z-10 size-[32rem] rounded-full blur-3xl"
+        className="bg-daun/10 pointer-events-none absolute top-20 right-[-10%] -z-10 size-128 rounded-full blur-3xl"
       />
 
       <section className="mx-auto max-w-6xl px-5 pt-28 pb-20 sm:px-6 md:pt-32">
@@ -423,7 +423,7 @@ export default function Classify() {
                       ? 'bg-emas text-rimba-950'
                       : i < step
                         ? 'bg-daun/20 text-daun-terang'
-                        : 'text-redup bg-white/[0.05] ring-1 ring-white/10',
+                        : 'text-redup bg-white/5 ring-1 ring-white/10',
                   )}
                 >
                   <span
@@ -489,18 +489,18 @@ export default function Classify() {
         <div className="mt-9 grid gap-6 lg:grid-cols-[1.45fr_1fr] lg:gap-7">
           {/* Kiri: bingkai foto + tombol */}
           <div
-            className="masuk-skala kartu flex flex-col rounded-[2rem] p-3 sm:p-4"
+            className="masuk-skala kartu flex flex-col rounded-4xl p-3 sm:p-4"
             style={delay(200)}
           >
             <div
               data-testid="viewfinder"
               className={cn(
-                'relative grid aspect-[4/3.6] place-items-center overflow-hidden rounded-[1.5rem] transition-[background-color,box-shadow] duration-300 sm:aspect-[4/3] lg:aspect-auto lg:min-h-[24rem] lg:flex-1',
+                'relative grid aspect-[4/3.6] place-items-center overflow-hidden rounded-3xl transition-[background-color,box-shadow] duration-300 sm:aspect-4/3 lg:aspect-auto lg:min-h-96 lg:flex-1',
                 previewUrl
                   ? 'bg-rimba-950'
                   : dragging
                     ? 'bg-daun/15 ring-daun ring-2'
-                    : 'bg-rimba-950/60 bg-[radial-gradient(70%_70%_at_50%_45%,rgb(63_191_119/0.12),transparent_70%)] ring-1 ring-white/[0.06]',
+                    : 'bg-rimba-950/60 bg-[radial-gradient(70%_70%_at_50%_45%,rgb(63_191_119/0.12),transparent_70%)] ring-1 ring-white/6',
               )}
             >
               {[
@@ -589,7 +589,7 @@ export default function Classify() {
                         galeri.
                       </span>
                     </p>
-                    <p className="text-redup mt-4 rounded-full bg-white/[0.05] px-3 py-1 text-xs ring-1 ring-white/10">
+                    <p className="text-redup mt-4 rounded-full bg-white/5 px-3 py-1 text-xs ring-1 ring-white/10">
                       JPG, PNG, atau WebP hingga 15 MB
                     </p>
                   </div>
@@ -684,16 +684,16 @@ export default function Classify() {
 
           {/* Kanan: tips + contoh */}
           <aside className="flex flex-col gap-6">
-            <div className="masuk kartu rounded-[2rem] p-6" style={delay(320)}>
+            <div className="masuk kartu rounded-4xl p-6" style={delay(320)}>
               <h2 className="font-display text-lg font-semibold">Biar hasilnya akurat</h2>
               <ul className="mt-4 grid gap-2">
                 {TIPS.map((t) => (
                   <li
                     key={t.title}
                     onPointerMove={trackSpotlight}
-                    className="sorot group flex items-start gap-3.5 rounded-2xl p-3 transition-colors duration-300 hover:bg-white/[0.04]"
+                    className="sorot group flex items-start gap-3.5 rounded-2xl p-3 transition-colors duration-300 hover:bg-white/4"
                   >
-                    <span className="text-emas group-hover:bg-emas group-hover:text-rimba-950 grid size-10 shrink-0 place-items-center rounded-xl bg-white/[0.06] ring-1 ring-white/10 transition-[transform,background-color,color] duration-300 group-hover:-rotate-6">
+                    <span className="text-emas group-hover:bg-emas group-hover:text-rimba-950 grid size-10 shrink-0 place-items-center rounded-xl bg-white/6 ring-1 ring-white/10 transition-[transform,background-color,color] duration-300 group-hover:-rotate-6">
                       <Icon name={t.icon} size={18} />
                     </span>
                     <span>
@@ -710,7 +710,7 @@ export default function Classify() {
             </div>
 
             {samples.length > 0 ? (
-              <div className="masuk kartu flex-1 rounded-[2rem] p-6" style={delay(420)}>
+              <div className="masuk kartu flex-1 rounded-4xl p-6" style={delay(420)}>
                 <h2 className="font-display text-lg font-semibold">Belum punya foto?</h2>
                 <p className="text-redup mt-1 text-sm">Coba pakai salah satu foto contoh ini.</p>
                 <ul className="mt-4 grid grid-cols-3 gap-2.5">
@@ -729,7 +729,7 @@ export default function Classify() {
                           loading="lazy"
                           className="size-full object-cover transition-transform duration-500 group-hover:scale-110"
                         />
-                        <span className="from-rimba-950/70 absolute inset-0 bg-gradient-to-t to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                        <span className="from-rimba-950/70 absolute inset-0 bg-linear-to-t to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                         <span className="absolute inset-x-0 bottom-1.5 text-center text-[11px] font-semibold text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100">
                           Pakai
                         </span>
@@ -744,7 +744,7 @@ export default function Classify() {
                 </ul>
               </div>
             ) : (
-              <div className="masuk kartu flex-1 rounded-[2rem] p-6" style={delay(420)}>
+              <div className="masuk kartu flex-1 rounded-4xl p-6" style={delay(420)}>
                 <h2 className="font-display text-lg font-semibold">Yang bisa dikenali</h2>
                 <p className="text-redup mt-1 text-sm">
                   Dua kelompok sampah rumah tangga sehari-hari.

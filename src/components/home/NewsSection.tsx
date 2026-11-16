@@ -27,8 +27,8 @@ function NewsImage({ item, featured }: { item: NewsItem; featured: boolean }) {
   return (
     <div
       className={cn(
-        'from-kartu-2 via-panel to-rimba-950 relative overflow-hidden bg-gradient-to-br',
-        featured ? 'aspect-[16/9] lg:aspect-auto lg:h-full lg:min-h-[21rem]' : 'aspect-[16/10]',
+        'from-kartu-2 via-panel to-rimba-950 relative overflow-hidden bg-linear-to-br',
+        featured ? 'aspect-video lg:aspect-auto lg:h-full lg:min-h-84' : 'aspect-16/10',
       )}
     >
       {failed ? (
@@ -42,12 +42,12 @@ function NewsImage({ item, featured }: { item: NewsItem; featured: boolean }) {
           loading="lazy"
           decoding="async"
           onError={() => setFailed(true)}
-          className="size-full object-cover transition-transform duration-[900ms] ease-[cubic-bezier(.22,1,.36,1)] group-hover:scale-[1.07]"
+          className="ease-keluar size-full object-cover transition-transform duration-900 group-hover:scale-[1.07]"
         />
       )}
       <div
         aria-hidden
-        className="from-rimba-950/90 via-rimba-950/20 absolute inset-0 bg-gradient-to-t to-transparent"
+        className="from-rimba-950/90 via-rimba-950/20 absolute inset-0 bg-linear-to-t to-transparent"
       />
       <span
         className={cn(
@@ -141,11 +141,11 @@ export function NewsSection() {
     <section id="berita" className="relative overflow-hidden py-24 md:py-32">
       <div
         aria-hidden
-        className="pola-kisi absolute inset-0 [mask-image:radial-gradient(70%_60%_at_50%_30%,black,transparent)]"
+        className="pola-kisi absolute inset-0 mask-[radial-gradient(70%_60%_at_50%_30%,black,transparent)]"
       />
       <div
         aria-hidden
-        className="bg-emas/[0.07] pointer-events-none absolute -top-24 right-[-10%] size-[34rem] rounded-full blur-3xl"
+        className="bg-emas/[0.07] pointer-events-none absolute -top-24 right-[-10%] size-136 rounded-full blur-3xl"
       />
       <div className="relative mx-auto max-w-6xl px-5 sm:px-6">
         <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
@@ -173,7 +173,7 @@ export function NewsSection() {
                     'rounded-full px-4 py-2 text-sm font-medium transition-[background-color,color,transform] duration-300 hover:-translate-y-0.5',
                     topic === t
                       ? 'text-rimba-950 bg-white'
-                      : 'text-redup bg-white/[0.06] ring-1 ring-white/10 hover:bg-white/10 hover:text-white',
+                      : 'text-redup bg-white/6 ring-1 ring-white/10 hover:bg-white/10 hover:text-white',
                   )}
                 >
                   {t}
@@ -203,7 +203,7 @@ export function NewsSection() {
             <button
               type="button"
               onClick={() => setAll((a) => !a)}
-              className="group font-display inline-flex h-12 items-center gap-2 rounded-full bg-white/[0.06] px-6 text-sm font-semibold text-white ring-1 ring-white/15 transition-[background-color,transform] duration-300 hover:-translate-y-0.5 hover:bg-white/[0.1]"
+              className="group font-display inline-flex h-12 items-center gap-2 rounded-full bg-white/6 px-6 text-sm font-semibold text-white ring-1 ring-white/15 transition-[background-color,transform] duration-300 hover:-translate-y-0.5 hover:bg-white/10"
             >
               {all ? 'Tampilkan lebih sedikit' : `Lihat semua berita (${list.length})`}
               <Icon

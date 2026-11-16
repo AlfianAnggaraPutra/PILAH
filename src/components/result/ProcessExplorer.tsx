@@ -64,7 +64,7 @@ function InputStep({ r }: { r: Classification }) {
           lalu setiap nilai dibagi 255. Inilah satu-satunya yang dilihat model: 4.096 angka antara 0
           dan 1.
         </p>
-        <div className="mt-5 rounded-2xl bg-white/[0.05] p-4 text-sm" aria-live="polite">
+        <div className="mt-5 rounded-2xl bg-white/5 p-4 text-sm" aria-live="polite">
           {hover && v !== null ? (
             <p className="angka">
               Piksel baris {hover.i + 1}, kolom {hover.j + 1}: grayscale{' '}
@@ -253,7 +253,7 @@ function HiddenStep({ r }: { r: Classification }) {
   const activeCount = z.reduce((c, v) => c + (v > 0 ? 1 : 0), 0)
   return (
     <div className="grid gap-8 lg:grid-cols-[1.3fr_1fr]">
-      <div className="flex h-56 items-center gap-1 rounded-2xl bg-white/[0.04] px-3 sm:gap-1.5">
+      <div className="flex h-56 items-center gap-1 rounded-2xl bg-white/4 px-3 sm:gap-1.5">
         {Array.from(zin).map((v, j) => (
           <div key={j} className="group relative flex h-full flex-1 flex-col justify-center">
             <div className="relative h-1/2">
@@ -309,7 +309,7 @@ function OutputStep({ r }: { r: Classification }) {
     <div className="grid gap-8 lg:grid-cols-[1fr_1fr] lg:items-center">
       <svg
         viewBox={`0 0 ${W} ${H}`}
-        className="w-full rounded-2xl bg-white/[0.04]"
+        className="w-full rounded-2xl bg-white/4"
         role="img"
         aria-label={`Kurva sigmoid, y = ${fmt(y, 3)}`}
       >
@@ -388,7 +388,7 @@ export function ProcessExplorer({ result }: { result: Classification }) {
   const idx = STEPS.findIndex((s) => s.id === step)
 
   return (
-    <section id="proses" className="kartu rounded-[2rem] p-5 sm:p-8">
+    <section id="proses" className="kartu rounded-4xl p-5 sm:p-8">
       <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
         <div>
           <h2 className="text-2xl font-bold sm:text-3xl">Dari foto ke keputusan</h2>
@@ -418,7 +418,7 @@ export function ProcessExplorer({ result }: { result: Classification }) {
                 ? 'bg-emas text-rimba-950'
                 : i < idx
                   ? 'bg-daun/15 text-daun-terang hover:bg-daun/25'
-                  : 'text-redup bg-white/[0.04] ring-1 ring-white/10 hover:text-white',
+                  : 'text-redup bg-white/4 ring-1 ring-white/10 hover:text-white',
             )}
           >
             <span

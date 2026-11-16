@@ -37,7 +37,7 @@ export function BgPhoto({
         onLoad={() => setState('ok')}
         onError={() => setState('error')}
         className={cn(
-          'size-full object-cover transition-opacity duration-[1400ms] ease-out',
+          'size-full object-cover transition-opacity duration-1400 ease-out',
           state === 'ok' ? 'opacity-100' : 'opacity-0',
           imgClassName,
         )}

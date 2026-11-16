@@ -61,7 +61,7 @@ export function ConfirmDialog({
 
   if (!open) return null
   return createPortal(
-    <div className="fixed inset-0 z-[95] grid place-items-center p-4">
+    <div className="fixed inset-0 z-95 grid place-items-center p-4">
       <div
         aria-hidden
         onClick={onCancel}
@@ -73,7 +73,7 @@ export function ConfirmDialog({
         aria-modal="true"
         aria-labelledby="dialog-judul"
         aria-describedby="dialog-isi"
-        className="kartu bg-panel/95 relative w-full max-w-md animate-[masuk-skala_0.45s_cubic-bezier(.22,1,.36,1)_both] overflow-hidden rounded-[2rem] p-7 text-center sm:p-8"
+        className="kartu bg-panel/95 relative w-full max-w-md animate-[masuk-skala_0.45s_cubic-bezier(.22,1,.36,1)_both] overflow-hidden rounded-4xl p-7 text-center sm:p-8"
       >
         <div
           aria-hidden

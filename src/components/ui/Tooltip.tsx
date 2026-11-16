@@ -55,7 +55,7 @@ export function Tooltip({
           aria-hidden
           className={cn(
             'bg-rimba-950 absolute left-1/2 size-2.5 -translate-x-1/2 rotate-45 border-white/10',
-            side === 'top' ? '-bottom-[6px] border-r border-b' : '-top-[6px] border-t border-l',
+            side === 'top' ? '-bottom-1.5 border-r border-b' : '-top-1.5 border-t border-l',
           )}
         />
       </span>

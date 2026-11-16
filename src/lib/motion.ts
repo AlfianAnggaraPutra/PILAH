@@ -87,15 +87,12 @@ export function play(
 /** Pasang data-tampak="1" saat elemen masuk layar. Dipakai bersama kelas .muncul. */
 export function useInView<T extends Element>(options: { once?: boolean; margin?: string } = {}) {
   const ref = useRef<T>(null)
-  const [inView, setInView] = useState(false)
+  const [inView, setInView] = useState(() => typeof IntersectionObserver === 'undefined')
   const { once = true, margin = '0px 0px -12% 0px' } = options
   useEffect(() => {
     const el = ref.current
     if (!el) return
-    if (typeof IntersectionObserver === 'undefined') {
-      setInView(true)
-      return
-    }
+    if (typeof IntersectionObserver === 'undefined') return
     const io = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -114,12 +111,9 @@ export function useInView<T extends Element>(options: { once?: boolean; margin?:
 /** Angka yang naik dari 0 ke nilai tujuan dengan easing keluar. */
 export function useCountUp(target: number, { duration = 1100, start = true, delay = 0 } = {}) {
   const [value, setValue] = useState(0)
+  const reduced = prefersReducedMotion()
   useEffect(() => {
-    if (!start) return
-    if (prefersReducedMotion()) {
-      setValue(target)
-      return
-    }
+    if (!start || reduced) return
     let raf = 0
     let t0 = 0
     const timer = setTimeout(() => {
@@ -136,8 +130,8 @@ export function useCountUp(target: number, { duration = 1100, start = true, dela
       clearTimeout(timer)
       cancelAnimationFrame(raf)
     }
-  }, [target, duration, start, delay])
-  return value
+  }, [target, duration, start, delay, reduced])
+  return reduced && start ? target : value
 }
 
 /* ------------------------------------------------------------------ */

@@ -11,15 +11,15 @@ export function FaqSection() {
     <section id="faq" className="bg-latar-2 relative overflow-hidden py-24 md:py-32">
       <div
         aria-hidden
-        className="pola-titik absolute inset-0 [mask-image:linear-gradient(to_bottom,black,transparent_70%)] opacity-50"
+        className="pola-titik absolute inset-0 mask-[linear-gradient(to_bottom,black,transparent_70%)] opacity-50"
       />
       <div
         aria-hidden
-        className="bg-daun/10 pointer-events-none absolute bottom-[-20%] left-[-10%] size-[30rem] rounded-full blur-3xl"
+        className="bg-daun/10 pointer-events-none absolute bottom-[-20%] left-[-10%] size-120 rounded-full blur-3xl"
       />
       <div className="relative mx-auto grid max-w-6xl gap-12 px-5 sm:px-6 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16">
         <Reveal gaya="kiri" className="lg:sticky lg:top-28 lg:self-start">
-          <span className="text-emas grid size-14 place-items-center rounded-2xl bg-white/[0.06] ring-1 ring-white/10">
+          <span className="text-emas grid size-14 place-items-center rounded-2xl bg-white/6 ring-1 ring-white/10">
             <Icon name="help" size={26} />
           </span>
           <h2 className="mt-6 text-3xl leading-tight font-bold sm:text-[2.75rem]">
@@ -30,7 +30,7 @@ export function FaqSection() {
           </p>
           <Link
             to="/tentang"
-            className="group mt-7 inline-flex items-center gap-2 rounded-full bg-white/[0.06] px-5 py-3 text-sm font-semibold text-white ring-1 ring-white/15 transition-[background-color,transform] duration-300 hover:-translate-y-0.5 hover:bg-white/10"
+            className="group mt-7 inline-flex items-center gap-2 rounded-full bg-white/6 px-5 py-3 text-sm font-semibold text-white ring-1 ring-white/15 transition-[background-color,transform] duration-300 hover:-translate-y-0.5 hover:bg-white/10"
           >
             Pelajari tentang PILAH
             <Icon
@@ -81,7 +81,7 @@ export function FaqSection() {
                     role="region"
                     aria-labelledby={`faq-q-${i}`}
                     className={cn(
-                      'grid transition-[grid-template-rows,opacity] duration-500 ease-[cubic-bezier(.22,1,.36,1)]',
+                      'ease-keluar grid transition-[grid-template-rows,opacity] duration-500',
                       isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0',
                     )}
                   >
