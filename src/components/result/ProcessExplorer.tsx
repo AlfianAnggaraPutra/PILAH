@@ -305,6 +305,9 @@ function OutputStep({ r }: { r: Classification }) {
     return `${i ? 'L' : 'M'}${X(v).toFixed(1)},${Y(1 / (1 + Math.exp(-v))).toFixed(1)}`
   }).join(' ')
   const ano = y >= r.meta.threshold
+  // Label ditaruh di sisi yang tidak dilewati kurva: di bawah-kanan saat y ≥ 0,5 (kurva naik ke kanan),
+  // di atas-kiri saat y < 0,5. Di dekat tepi grafik, label dibalik agar tidak terpotong.
+  const labelLeft = y >= 0.5 ? yIn > 4 : yIn > -4
   return (
     <div className="grid gap-8 lg:grid-cols-[1fr_1fr] lg:items-center">
       <svg
@@ -343,11 +346,11 @@ function OutputStep({ r }: { r: Classification }) {
           strokeWidth="2"
         />
         <text
-          x={X(yIn) + (yIn > 4 ? -12 : 12)}
-          y={Y(y) + (y > 0.5 ? 18 : -10)}
+          x={X(yIn) + (labelLeft ? -12 : 12)}
+          y={Y(y) + (y >= 0.5 ? 20 : -12)}
           fontSize="12"
           fontWeight="600"
-          textAnchor={yIn > 4 ? 'end' : 'start'}
+          textAnchor={labelLeft ? 'end' : 'start'}
           fill="#ecf6f0"
         >
           y = {fmt(y, 3)}

@@ -129,27 +129,6 @@ export const FAQ = [
   },
 ] as const
 
-export const REFERENCES = [
-  'Bishop, C. M. (2006). Pattern recognition and machine learning. Springer.',
-  'Fadllurrohman, A. N., Lutfi, M., Akbar D. E., Q., & Fathurohman, A. (2024). Pemanfaatan convolutional neural network untuk klasifikasi efisien dan akurat pada berbagai jenis sampah. Jurnal Komputer dan Teknologi Informasi, 2(2), 80–83.',
-  'Fantara, F. P., Syauqy, D., & Setyawan, G. E. (2018). Implementasi sistem klasifikasi sampah organik dan anorganik dengan metode jaringan saraf tiruan backpropagation. Jurnal Pengembangan Teknologi Informasi dan Ilmu Komputer, 2(11), 5577–5586.',
-  'Fausett, L. (1994). Fundamentals of neural networks: Architectures, algorithms, and applications. Prentice Hall.',
-  'Gonzalez, R. C., & Woods, R. E. (2018). Digital image processing (4th ed.). Pearson.',
-  'Goodfellow, I., Bengio, Y., & Courville, A. (2016). Deep learning. MIT Press.',
-  'Han, J., Kamber, M., & Pei, J. (2012). Data mining: Concepts and techniques (3rd ed.). Morgan Kaufmann.',
-  'LeCun, Y., Bottou, L., Bengio, Y., & Haffner, P. (1998). Gradient-based learning applied to document recognition. Proceedings of the IEEE, 86(11), 2278–2324.',
-  'Nair, V., & Hinton, G. E. (2010). Rectified linear units improve restricted Boltzmann machines. Proceedings of the 27th ICML, 807–814.',
-  'Purba, M. E., Situmorang, A. Z., Ginting, G. L. B., Lubis, M. W. P., & Sinaga, F. M. (2025). Klasifikasi sampah organik dan anorganik menggunakan algoritma CNN. Jurnal Sifo Mikroskil, 26(1), 37–54.',
-  'Republik Indonesia. (2008). Undang-Undang Nomor 18 Tahun 2008 tentang Pengelolaan Sampah.',
-  'Ruder, S. (2016). An overview of gradient descent optimization algorithms. arXiv:1609.04747.',
-  'Rumelhart, D. E., Hinton, G. E., & Williams, R. J. (1986). Learning representations by back-propagating errors. Nature, 323(6088), 533–536.',
-  'Sekar, S. (2019). Waste classification data [Data set]. Kaggle.',
-  'Siang, J. J. (2005). Jaringan syaraf tiruan dan pemrogramannya menggunakan Matlab. Andi.',
-  'Sokolova, M., & Lapalme, G. (2009). A systematic analysis of performance measures for classification tasks. Information Processing & Management, 45(4), 427–437.',
-  'Violleta, P. T. (2025, 25 Maret). KLH ingatkan masyarakat habiskan makanan guna kurangi "food waste". ANTARA News.',
-  'Zahdomo, R. (2025, 19 Agustus). 52 persen timbunan sampah di Indonesia masih belum terkelola. JawaPos.com.',
-] as const
-
 export const DATASET = {
   name: 'Waste Classification Data',
   author: 'Sekar (2019)',

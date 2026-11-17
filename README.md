@@ -29,8 +29,8 @@ sendiri supaya bundel kecil dan tidak terganggu perubahan versi pustaka.
    npm run dev
    ```
    Buka <http://localhost:5173>. Selama `public/model/model.bin` belum ada, halaman Pindai berjalan dalam
-   **mode demo** (bobot acak, ada banner peringatan). Build produksi tanpa model menampilkan pesan bahwa
-   model belum terpasang.
+   **mode demo** (bobot acak, ada banner peringatan), baik saat `npm run dev` maupun setelah deploy.
+   Jalankan `npm install` lagi setiap kali `package.json` berubah (mis. setelah pdf-lib ditambahkan).
 
 | Perintah            | Fungsi                                                               |
 | ------------------- | -------------------------------------------------------------------- |
@@ -67,14 +67,14 @@ Detail format dan alasan teknisnya ada di `docs/MODEL-FORMAT.md`.
 
 ## 4. Halaman
 
-| Alamat         | Isi                                                                                                                                                      |
-| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| (splash)       | Sampah jatuh ke tong yang sesuai, logo bergeser mulus, nama dan slogan muncul, jeda 3 detik. Sekali per sesi, tanpa tombol lewati.                       |
-| `/`            | Hero dengan permainan pilah, data sampah nasional, cara pakai, panduan organik/anorganik, **Berita** (`/#berita`), **FAQ** (`/#faq`), ajakan akhir       |
-| `/klasifikasi` | Kamera langsung, galeri, seret-lepas, tempel (Ctrl+V), foto contoh, riwayat sesi, dialog konfirmasi saat meninggalkan halaman dengan foto belum dikenali |
-| `/hasil`       | Foto masuk tong, peluang tiap kelas, saran penanganan, dan penelusuran 6 langkah CNN untuk foto itu                                                      |
-| `/tentang`     | Latar belakang, cara kerja interaktif, model & data, evaluasi, tim, referensi                                                                            |
-| lainnya        | 404 dengan koran tersesat yang bisa dipilah                                                                                                              |
+| Alamat         | Isi                                                                                                                                                                                                                                                                                                                                          |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| (splash)       | Sampah jatuh ke tong yang sesuai, logo bergeser mulus, nama dan slogan muncul, jeda 3 detik. Sekali per sesi, tanpa tombol lewati.                                                                                                                                                                                                           |
+| `/`            | Hero dengan permainan pilah, data sampah nasional, cara pakai, panduan organik/anorganik, **Berita** (`/#berita`), **FAQ** (`/#faq`), ajakan akhir                                                                                                                                                                                           |
+| `/klasifikasi` | 1–20 foto per pindaian lewat kamera, galeri, seret-lepas, atau tempel (Ctrl+V). Deretan pratinjau dengan tombol hapus, foto ulang, dan ganti. Berkas yang tidak sesuai (format selain JPG/PNG/WebP, > 15 MB, rusak, terlalu kecil, duplikat, melebihi 20 foto) ditolak dengan alasan per berkas. Dialog konfirmasi saat meninggalkan halaman |
+| `/hasil`       | 1 foto: foto masuk tong, peluang tiap kelas, saran, penelusuran 6 langkah CNN. 2+ foto: ringkasan (jumlah per jenis, tabel bergambar, saringan), rincian per foto (`/hasil?foto=…`), dan **Unduh PDF**. Pindah halaman atau Pindai lagi dikonfirmasi dulu, lalu hasilnya dihapus                                                             |
+| `/tentang`     | Latar belakang, cara kerja interaktif, model & data, evaluasi, tim                                                                                                                                                                                                                                                                           |
+| lainnya        | 404 dengan koran tersesat yang bisa dipilah                                                                                                                                                                                                                                                                                                  |
 
 Alamat lama `/cara-kerja` dan `/panduan`, juga `/berita` dan `/faq`, dialihkan ke bagian yang sesuai.
 
@@ -96,15 +96,18 @@ pilah-web/
     ├── components/
     │   ├── about/      peraga konvolusi, pooling, sigmoid, kurva error
     │   ├── brand/      tong (SVG berlapis), logo, slogan
-    │   ├── classify/   kamera
+    │   ├── classify/   kamera, deretan pratinjau foto
     │   ├── home/       permainan pilah, berita, FAQ
     │   ├── layout/     header, navigasi bawah, footer
-    │   ├── result/     animasi masuk tong, penelusur proses CNN
+    │   ├── result/     animasi masuk tong, penelusur proses CNN, ringkasan banyak foto
     │   ├── splash/
     │   └── ui/         tombol, ikon, reveal, tooltip, dialog konfirmasi, foto latar, count-up, canvas peta
     ├── lib/
     │   ├── ml/         preprocess (resize identik Pillow), forward, model, classify + tes
-    │   ├── content.ts  semua teks: statistik, tim, FAQ, berita, foto, referensi
+    │   ├── advice.ts   label hasil + saran penanganan per foto
+    │   ├── content.ts  semua teks: statistik, tim, FAQ, berita, foto
+    │   ├── photos.ts   aturan berkas: format, 15 MB, 20 foto, duplikat (+ tes)
+    │   ├── report.ts   laporan PDF (pdf-lib, dimuat saat tombol Unduh PDF ditekan)
     │   ├── motion.ts   easing pegas, helper animasi
     │   └── router.tsx
     ├── pages/          Home, Classify, Result, About, NotFound

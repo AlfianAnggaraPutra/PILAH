@@ -37,6 +37,14 @@ const STAGE = [
   { id: 'box', rest: [60, -76], rot: -10 },
 ] as const
 
+/**
+ * Kotak tong menyisakan ruang kosong di atas (untuk tutup yang terbuka), jadi titik tengah visual tong
+ * yang tertutup ada di bawah titik tengah kotaknya. Selisihnya (dalam satuan tinggi tong) dipakai untuk
+ * menurunkan nama + slogan agar sejajar dengan badan tong, dan menaikkan seluruh komposisi agar tetap
+ * di tengah layar. Badan tong yang tertutup terlihat dari y = 37 sampai y = 224 pada viewBox -45..240.
+ */
+const VIS_SHIFT = ((37 + 224) / 2 - (-45 + 240) / 2) / 285
+
 const ENV_W = 540
 const ENV_H = 360
 /** Lama logo + nama ditahan sebelum pindah ke beranda. */
@@ -61,6 +69,20 @@ function useStageScale() {
   return scale
 }
 
+function useWide() {
+  const query = '(min-width: 900px)'
+  const [wide, setWide] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia(query).matches,
+  )
+  useEffect(() => {
+    const mq = window.matchMedia(query)
+    const on = () => setWide(mq.matches)
+    mq.addEventListener('change', on)
+    return () => mq.removeEventListener('change', on)
+  }, [])
+  return wide
+}
+
 export function SplashScreen({
   onDone,
   onExitStart,
@@ -73,6 +95,8 @@ export function SplashScreen({
 }) {
   const reduced = prefersReducedMotion()
   const scale = useStageScale()
+  const wide = useWide()
+  const visShift = VIS_SHIFT * BIN_H * scale
   const rootRef = useRef<HTMLDivElement>(null)
   const stageRef = useRef<HTMLDivElement>(null)
   const logoRef = useRef<HTMLDivElement>(null)
@@ -104,7 +128,7 @@ export function SplashScreen({
       y: s.top + s.height / 2 - (l.top + l.height / 2),
     }
     logo.style.transform = `translate(${offset.current.x}px, ${offset.current.y}px)`
-  }, [scale])
+  }, [scale, wide])
 
   useEffect(() => {
     let dead = false
@@ -304,7 +328,8 @@ export function SplashScreen({
       <div
         ref={stageRef}
         data-stage
-        className="relative flex flex-col items-center gap-7 min-[900px]:flex-row min-[900px]:gap-14"
+        className="relative flex flex-col items-center gap-6 min-[900px]:flex-row min-[900px]:gap-16"
+        style={{ transform: `translateY(${-(wide ? visShift : visShift * 1.25)}px)` }}
       >
         <div ref={logoRef} className="relative z-10 will-change-transform">
           <div
@@ -378,7 +403,10 @@ export function SplashScreen({
         <div
           ref={textRef}
           className="flex flex-col items-center text-center min-[900px]:items-start min-[900px]:text-left"
-          style={{ visibility: reduced ? 'visible' : 'hidden' }}
+          style={{
+            visibility: reduced ? 'visible' : 'hidden',
+            transform: wide ? `translateY(${visShift}px)` : undefined,
+          }}
         >
           <h1
             aria-label={BRAND.name}

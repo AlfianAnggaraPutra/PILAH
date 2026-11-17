@@ -70,27 +70,21 @@ function Hero() {
       <div aria-hidden className="pola-titik absolute inset-0 opacity-40" />
 
       <div className="relative mx-auto grid w-full max-w-6xl items-center gap-12 px-5 pt-28 pb-24 sm:px-6 md:pt-32 lg:grid-cols-[1fr_1.02fr] lg:gap-8">
-        <div className="max-w-xl">
-          <p
-            className="masuk-blur text-mint-teks inline-flex items-center gap-2.5 rounded-full bg-white/6 py-1.5 pr-4 pl-2 text-sm ring-1 ring-white/10 backdrop-blur"
-            style={delay(50)}
-          >
-            <span className="bg-daun/20 relative grid size-6 place-items-center rounded-full">
-              <span className="bg-daun absolute size-2 animate-[denyut_2.2s_ease-in-out_infinite] rounded-full" />
-            </span>
-            Pilah sampah jadi lebih mudah
-          </p>
-          <h1 className="mt-6 text-[2.7rem] leading-[1.05] font-bold tracking-tight text-white sm:text-6xl lg:text-[4.2rem]">
-            <WordsIn text="Sampah ini masuk tong yang mana?" start={150} />
+        <div className="max-w-xl sm:max-lg:mx-auto sm:max-lg:max-w-2xl sm:max-lg:text-center">
+          <h1 className="text-[2.7rem] leading-[1.05] font-bold tracking-tight text-white sm:text-6xl lg:text-[4.2rem]">
+            <WordsIn text="Sampah ini masuk tong yang mana?" start={80} />
           </h1>
           <p
-            className="masuk-blur text-mint-teks/85 mt-6 max-w-lg text-lg leading-relaxed"
+            className="masuk-blur text-mint-teks/85 mt-6 max-w-lg text-lg leading-relaxed sm:max-lg:mx-auto"
             style={delay(650)}
           >
             Foto sampahnya, PILAH langsung memberi tahu apakah itu organik atau anorganik, lengkap
             dengan cara membuangnya yang benar.
           </p>
-          <div className="masuk mt-9 flex flex-wrap gap-3" style={delay(800)}>
+          <div
+            className="masuk mt-9 grid gap-3 sm:flex sm:flex-wrap sm:max-lg:justify-center"
+            style={delay(800)}
+          >
             <ButtonLink to="/klasifikasi" size="lg">
               <Icon name="scan" size={20} />
               Pindai sampah
@@ -99,7 +93,7 @@ function Hero() {
               Panduan memilah
             </ButtonLink>
           </div>
-          <ul className="text-mint-teks/80 mt-10 flex flex-wrap gap-x-6 gap-y-3 text-sm">
+          <ul className="text-mint-teks/80 mt-10 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm sm:max-lg:justify-center">
             {PERKS.map((p, i) => (
               <li key={p.label} className="masuk" style={delay(950 + i * 90)}>
                 <Tooltip tip={p.tip} side="bottom">
@@ -118,39 +112,22 @@ function Hero() {
         </div>
 
         <div className="masuk-skala kartu relative rounded-4xl p-4 sm:p-6" style={delay(450)}>
-          <div className="mb-3 flex items-center justify-between px-1">
+          <div className="mb-3 flex items-center justify-between gap-3 px-1">
             <p className="font-display text-emas-terang text-sm font-semibold">
               Coba dulu, sebelum memotret
             </p>
-            <span className="text-redup flex items-center gap-1.5 text-xs">
-              <Icon name="mouse" size={14} /> Seret atau ketuk
-            </span>
+            <span className="text-redup text-xs whitespace-nowrap">Seret atau ketuk</span>
           </div>
           <SortGame />
         </div>
       </div>
-
-      <a
-        href="#masalah"
-        onClick={(e) => {
-          e.preventDefault()
-          document.getElementById('masalah')?.scrollIntoView({ behavior: 'smooth' })
-        }}
-        aria-label="Gulir ke bawah"
-        className="masuk text-redup absolute bottom-6 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-2 text-xs transition-colors hover:text-white md:flex"
-        style={delay(1400)}
-      >
-        <span className="grid h-9 w-6 justify-center rounded-full border border-white/25 pt-1.5">
-          <span className="h-2 w-1 animate-bounce rounded-full bg-white/70" />
-        </span>
-      </a>
     </section>
   )
 }
 
 function Problem() {
   return (
-    <section id="masalah" className="relative overflow-hidden py-24 md:py-32">
+    <section id="masalah" className="relative overflow-hidden py-16 md:py-24">
       <BgPhoto id={PHOTOS.masalah.id} className="opacity-[0.16]" />
       <div
         aria-hidden
@@ -177,9 +154,9 @@ function Problem() {
                 onPointerMove={trackSpotlight}
                 className="kartu sorot group h-full rounded-[1.6rem] p-5 transition-[transform,border-color] duration-500 hover:-translate-y-1 hover:border-white/20 sm:p-6"
               >
-                <p className="font-display text-[2.1rem] leading-none font-bold tracking-tight text-white sm:text-5xl">
+                <p className="font-display flex flex-wrap items-baseline gap-x-1 text-[2rem] leading-none font-bold tracking-tight text-white sm:text-5xl">
                   <CountUp value={s.value} digits={s.digits} delay={i * 110} />
-                  <span className="text-daun-terang ml-1 text-lg font-semibold sm:text-2xl">
+                  <span className="text-daun-terang text-base font-semibold whitespace-nowrap sm:text-2xl">
                     {s.unit}
                   </span>
                 </p>
@@ -198,11 +175,7 @@ function Problem() {
 
 function Steps() {
   return (
-    <section className="bg-latar-2 relative overflow-hidden py-24 md:py-28">
-      <div
-        aria-hidden
-        className="pola-kisi absolute inset-0 mask-[radial-gradient(60%_70%_at_50%_50%,black,transparent)]"
-      />
+    <section className="bg-latar-2 relative overflow-hidden py-16 md:py-24">
       <div className="relative mx-auto max-w-6xl px-5 sm:px-6">
         <Reveal gaya="blur" className="mx-auto max-w-2xl text-center">
           <h2 className="text-3xl font-bold sm:text-[2.75rem]">Cukup tiga langkah</h2>
@@ -210,11 +183,7 @@ function Steps() {
             Tidak perlu daftar dan tidak perlu memasang aplikasi.
           </p>
         </Reveal>
-        <ol className="relative mt-14 grid gap-5 md:grid-cols-3">
-          <li
-            aria-hidden
-            className="from-daun/0 via-daun/50 to-emas/0 pointer-events-none absolute top-[3.6rem] right-[17%] left-[17%] hidden h-px bg-linear-to-r md:block"
-          />
+        <ol className="mt-14 grid gap-5 md:grid-cols-3">
           {STEPS.map((s, i) => (
             <Reveal as="li" key={s.title} delay={i * 140} gaya="naik">
               <div
@@ -244,7 +213,7 @@ function Guide() {
   const items = Object.values(ITEMS).filter((i) => i.kind === kind)
   const org = kind === 'organik'
   return (
-    <section id="panduan" className="relative overflow-hidden py-24 md:py-32">
+    <section id="panduan" className="relative overflow-hidden py-16 md:py-24">
       <div className="relative mx-auto max-w-6xl px-5 sm:px-6">
         <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
           <Reveal gaya="kiri" className="max-w-2xl">
@@ -311,17 +280,14 @@ function Guide() {
                 interactive
                 className="w-40 drop-shadow-[0_24px_30px_rgb(0_0_0/0.45)] sm:w-48"
               />
-              <p className="mt-3 hidden text-xs text-white/50 [@media(hover:hover)]:block">
-                Arahkan kursor ke tong untuk membukanya
-              </p>
-              <ul className="mt-6 flex flex-wrap justify-center gap-1.5">
+              <ul className="mt-6 flex justify-center gap-1 sm:gap-1.5">
                 {items.map((it) => (
                   <li key={it.id}>
                     <Tooltip tip={it.label} width="w-auto whitespace-nowrap">
                       <img
                         src={it.src}
                         alt={it.label}
-                        className="ease-pegas size-14 transition-transform duration-500 hover:-translate-y-2 hover:scale-110 hover:rotate-6 sm:size-16"
+                        className="ease-pegas size-12 transition-transform duration-500 hover:-translate-y-2 hover:scale-110 hover:rotate-6 sm:size-16"
                       />
                     </Tooltip>
                   </li>
@@ -387,7 +353,7 @@ function Guide() {
 
 function FinalCta() {
   return (
-    <section className="px-3 py-24 sm:px-6 md:py-28">
+    <section className="px-3 py-16 sm:px-6 md:py-24">
       <Reveal gaya="tirai" className="mx-auto max-w-6xl">
         <div className="butir relative isolate overflow-hidden rounded-[2.5rem] border border-white/10 px-6 py-16 text-center sm:px-12 md:py-20">
           <BgPhoto
@@ -418,7 +384,7 @@ function FinalCta() {
           <p className="text-mint-teks/85 mx-auto mt-4 max-w-lg text-lg">
             Cukup beberapa detik, dan kamu jadi tahu harus dibuang ke mana.
           </p>
-          <div className="mt-9 flex flex-wrap justify-center gap-3">
+          <div className="mx-auto mt-9 grid max-w-xs gap-3 sm:flex sm:max-w-none sm:flex-wrap sm:justify-center">
             <ButtonLink to="/klasifikasi" size="lg">
               <Icon name="scan" size={20} />
               Mulai pindai

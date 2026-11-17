@@ -13,34 +13,27 @@ import {
   cameraSupported,
   type CameraFailure,
 } from '@/components/classify/CameraModal'
+import { PhotoStrip } from '@/components/classify/PhotoStrip'
 import { BgPhoto } from '@/components/ui/BgPhoto'
 import { Button } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { Icon, type IconName } from '@/components/ui/Icon'
 import { MapCanvas } from '@/components/ui/MapCanvas'
-import { Reveal } from '@/components/ui/Reveal'
 import { PHOTOS } from '@/lib/content'
 import { ITEMS } from '@/lib/items'
-import {
-  classifyImage,
-  classifyInput,
-  UserFacingError,
-  type Classification,
-} from '@/lib/ml/classify'
+import { classifyImage, UserFacingError, type Classification } from '@/lib/ml/classify'
 import { loadModel, modelStatus, retryModel } from '@/lib/ml/model'
 import { prefersReducedMotion, trackSpotlight } from '@/lib/motion'
 import { useBlocker, useNavigate } from '@/lib/router'
-import { cn, pct, sleep } from '@/lib/utils'
+import { ACCEPT, FORMAT_TEXT, MAX_PHOTOS, screenFiles, type Rejected } from '@/lib/photos'
+import { cn, sleep } from '@/lib/utils'
 import {
   classifyActions,
-  decodeGray,
+  getClassifyState,
   useClassifyStore,
-  type HistoryItem,
+  type Photo,
 } from '@/store/classifyStore'
 
-const MAX_BYTES = 15 * 1024 * 1024
-const ACCEPT =
-  'image/jpeg,image/png,image/webp,image/gif,image/bmp,image/avif,image/heic,image/heif'
 const delay = (ms: number) => ({ '--tunda': `${ms}ms` }) as CSSProperties
 
 /** Tahapan yang ditampilkan selama foto diproses (bahasa sehari-hari). */
@@ -85,8 +78,79 @@ function useModelStatus() {
   return useSyncExternalStore(modelStatus.subscribe, modelStatus.get, modelStatus.get)
 }
 
-function looksLikeImage(f: File) {
-  return f.type.startsWith('image/') || /\.(jpe?g|png|webp|gif|bmp|avif|hei[cf])$/i.test(f.name)
+/** Laporan setelah memilih foto: berkas yang ditolak (beserta alasannya) dan yang melebihi batas. */
+interface UploadReport {
+  title: string
+  lines: string[]
+  rejected: Rejected[]
+  showFormats: boolean
+}
+
+function buildReport(
+  added: number,
+  rejected: Rejected[],
+  overflow: number,
+  full: boolean,
+): UploadReport | null {
+  if (full && rejected.length === 0) {
+    return {
+      title: `Batas ${MAX_PHOTOS} foto sudah tercapai`,
+      lines: [
+        'Foto baru tidak ditambahkan. Hapus salah satu foto terlebih dahulu jika ingin menggantinya dengan foto lain.',
+      ],
+      rejected: [],
+      showFormats: false,
+    }
+  }
+  if (rejected.length === 0 && overflow === 0) return null
+  const lines: string[] = []
+  let title: string
+  if (rejected.length === 1) title = `Berkas "${rejected[0].name}" tidak dapat diunggah`
+  else if (rejected.length > 1) title = `${rejected.length} berkas tidak dapat diunggah`
+  else title = `Hanya ${added} foto yang ditambahkan`
+  if (overflow > 0) {
+    lines.push(
+      full
+        ? `Batas ${MAX_PHOTOS} foto sudah tercapai, jadi ${overflow} foto lainnya tidak ditambahkan.`
+        : `Satu pindaian maksimal ${MAX_PHOTOS} foto, jadi ${overflow} foto lainnya tidak ditambahkan.`,
+    )
+  }
+  if (rejected.length > 0 && added > 0) lines.push(`${added} foto lainnya berhasil ditambahkan.`)
+  return {
+    title,
+    lines,
+    rejected,
+    showFormats: rejected.some((r) => /format|ukuran|rusak/.test(r.reason)),
+  }
+}
+
+const capital = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
+
+/** Lapisan proses banyak foto: kemajuan foto demi foto. */
+function BatchOverlay({ done, total }: { done: number; total: number }) {
+  const current = Math.min(done + 1, total)
+  return (
+    <div className="from-rimba-950/95 via-rimba-950/50 to-rimba-950/10 absolute inset-0 z-10 flex flex-col items-center justify-end gap-3 bg-linear-to-t p-5 text-white sm:p-6">
+      <div
+        aria-hidden
+        className="animate-pindai via-daun/50 pointer-events-none absolute inset-x-0 top-0 h-1/4 bg-linear-to-b from-transparent to-transparent"
+      />
+      <p
+        className="font-display text-lg font-semibold"
+        aria-live="polite"
+        data-testid="batch-progress"
+      >
+        Mengenali foto {current} dari {total}
+      </p>
+      <div className="h-2 w-full max-w-sm overflow-hidden rounded-full bg-white/15">
+        <div
+          className="bg-emas ease-keluar h-full rounded-full transition-[width] duration-300"
+          style={{ width: `${(done / total) * 100}%` }}
+        />
+      </div>
+      <p className="text-mint-teks/80 text-xs">Semua foto diproses langsung di perangkatmu.</p>
+    </div>
+  )
 }
 
 /** Lapisan proses: menampilkan hasil antara yang sungguhan selama foto dikenali. */
@@ -136,8 +200,11 @@ function ProcessingOverlay({ result, stage }: { result: Classification | null; s
   )
 }
 
-/** Ilustrasi bingkai kosong: dua tong dengan beberapa sampah melayang di sekitarnya. */
-function EmptyArt({ dragging }: { dragging: boolean }) {
+/**
+ * Ilustrasi bingkai kosong: beberapa sampah melayang di sekitarnya.
+ * `topOnly`: hanya yang di atas, supaya baris foto contoh di bawah tidak tertutup.
+ */
+function EmptyArt({ dragging, topOnly }: { dragging: boolean; topOnly: boolean }) {
   const orbit: Array<[keyof typeof ITEMS, string, number]> = [
     ['banana', 'left-[8%] top-[14%]', -14],
     ['can', 'right-[9%] top-[12%]', 12],
@@ -146,7 +213,7 @@ function EmptyArt({ dragging }: { dragging: boolean }) {
   ]
   return (
     <>
-      {orbit.map(([id, pos, rot], i) => (
+      {orbit.slice(0, topOnly ? 2 : 4).map(([id, pos, rot], i) => (
         <img
           key={id}
           src={ITEMS[id].src}
@@ -166,20 +233,26 @@ function EmptyArt({ dragging }: { dragging: boolean }) {
 
 export default function Classify() {
   const navigate = useNavigate()
-  const { file, previewUrl, history } = useClassifyStore()
+  const { photos, activeId } = useClassifyStore()
   const status = useModelStatus()
   const [error, setError] = useState<string | null>(null)
-  const [notice, setNotice] = useState<string | null>(null)
+  const [report, setReport] = useState<UploadReport | null>(null)
   const [busy, setBusy] = useState(false)
+  const [adding, setAdding] = useState(false)
   const [stage, setStage] = useState(0)
   const [pending, setPending] = useState<Classification | null>(null)
+  const [progress, setProgress] = useState(0)
   const [dragging, setDragging] = useState(false)
   const [camera, setCamera] = useState(false)
   const [samples, setSamples] = useState<Sample[]>([])
   const [loadingSample, setLoadingSample] = useState<string | null>(null)
   const [leaveTo, setLeaveTo] = useState<string | null>(null)
+  const [confirmClear, setConfirmClear] = useState(false)
   const galleryRef = useRef<HTMLInputElement>(null)
+  const replaceRef = useRef<HTMLInputElement>(null)
   const nativeCamRef = useRef<HTMLInputElement>(null)
+  /** Foto yang sedang diganti lewat galeri / kamera bawaan (null = menambah). */
+  const replaceTarget = useRef<string | null>(null)
   const runRef = useRef<HTMLButtonElement>(null)
   const dragDepth = useRef(0)
   const alive = useRef(true)
@@ -189,6 +262,10 @@ export default function Classify() {
       alive.current = false
     }
   }, [])
+
+  const count = photos.length
+  const active = photos.find((p) => p.id === activeId) ?? photos[0] ?? null
+  const activeIndex = active ? photos.indexOf(active) : -1
 
   useEffect(() => {
     loadModel().catch(() => undefined)
@@ -201,68 +278,77 @@ export default function Classify() {
   // Tahan perpindahan halaman selama ada foto yang belum dikenali, lalu tanyakan dulu lewat dialog.
   const guard = useMemo(
     () =>
-      file || busy
+      count > 0 || busy
         ? (to: string) => {
             setLeaveTo(to)
             return true
           }
         : null,
-    [file, busy],
+    [count, busy],
   )
   useBlocker(guard)
 
   // Muat ulang / tutup tab: browser menampilkan peringatan bawaannya.
   useEffect(() => {
-    if (!file) return
+    if (count === 0) return
     const onBeforeUnload = (e: BeforeUnloadEvent) => {
       e.preventDefault()
       e.returnValue = ''
     }
     window.addEventListener('beforeunload', onBeforeUnload)
     return () => window.removeEventListener('beforeunload', onBeforeUnload)
-  }, [file])
+  }, [count])
 
-  const pick = useCallback((f: File | null | undefined, extraNote?: string) => {
+  /**
+   * Terima berkas dari galeri, kamera, seret-lepas, tempel, atau foto contoh.
+   * `replace`: id foto yang diganti; null berarti menambah ke daftar.
+   */
+  const addFiles = useCallback(async (files: File[], replace: string | null = null) => {
+    if (files.length === 0) return
     setError(null)
-    setNotice(extraNote ?? null)
-    if (!f) return
-    if (!looksLikeImage(f)) {
-      setError('Berkas ini bukan gambar. Pilih foto berformat JPG, PNG, atau WebP.')
-      return
-    }
-    if (f.size === 0) {
-      setError('Berkas foto kosong. Coba pilih ulang fotonya.')
-      return
-    }
-    if (f.size > MAX_BYTES) {
-      setError(
-        `Ukuran foto ${(f.size / 1024 / 1024).toFixed(1).replace('.', ',')} MB, lebih dari batas 15 MB. Kecilkan dulu atau pilih foto lain.`,
+    const current = getClassifyState().photos
+    const others = replace ? current.filter((p) => p.id !== replace) : current
+    setAdding(true)
+    try {
+      const { accepted, rejected, overflow, full } = await screenFiles(
+        replace ? files.slice(0, 1) : files,
+        others.map((p) => p.file),
       )
-      return
+      if (replace && accepted[0]) classifyActions.replacePhoto(replace, accepted[0])
+      else classifyActions.addPhotos(accepted)
+      setReport(buildReport(accepted.length, rejected, overflow, full))
+      if (accepted.length)
+        requestAnimationFrame(() => runRef.current?.focus({ preventScroll: true }))
+    } finally {
+      setAdding(false)
     }
-    classifyActions.setFile(f)
-    requestAnimationFrame(() => runRef.current?.focus({ preventScroll: true }))
   }, [])
 
   // Tempel foto dari clipboard (Ctrl+V / Cmd+V).
   useEffect(() => {
     const onPaste = (e: ClipboardEvent) => {
-      const item = Array.from(e.clipboardData?.items ?? []).find((i) => i.type.startsWith('image/'))
-      const f = item?.getAsFile()
-      if (f) {
-        e.preventDefault()
-        pick(new File([f], f.name || `tempel-${Date.now()}.png`, { type: f.type }))
-      }
+      if (busy) return
+      const files = Array.from(e.clipboardData?.items ?? [])
+        .filter((i) => i.kind === 'file')
+        .map((i) => i.getAsFile())
+        .filter((f): f is File => !!f)
+      if (files.length === 0) return
+      e.preventDefault()
+      void addFiles(
+        files.map((f, i) =>
+          f.name ? f : new File([f], `tempel-${Date.now()}-${i + 1}.png`, { type: f.type }),
+        ),
+      )
     }
     window.addEventListener('paste', onPaste)
     return () => window.removeEventListener('paste', onPaste)
-  }, [pick])
+  }, [addFiles, busy])
 
-  // Seret-lepas di mana saja di halaman ini.
+  // Seret-lepas di mana saja di halaman ini (boleh banyak berkas sekaligus).
   useEffect(() => {
     const hasFiles = (e: DragEvent) => Array.from(e.dataTransfer?.types ?? []).includes('Files')
     const enter = (e: DragEvent) => {
-      if (!hasFiles(e)) return
+      if (!hasFiles(e) || busy) return
       e.preventDefault()
       dragDepth.current++
       setDragging(true)
@@ -279,13 +365,8 @@ export default function Classify() {
       e.preventDefault()
       dragDepth.current = 0
       setDragging(false)
-      const files = Array.from(e.dataTransfer?.files ?? [])
-      pick(
-        files[0],
-        files.length > 1
-          ? `${files.length} berkas dilepas, yang dipakai hanya yang pertama.`
-          : undefined,
-      )
+      if (busy) return
+      void addFiles(Array.from(e.dataTransfer?.files ?? []))
     }
     window.addEventListener('dragenter', enter)
     window.addEventListener('dragover', over)
@@ -297,8 +378,9 @@ export default function Classify() {
       window.removeEventListener('dragleave', leave)
       window.removeEventListener('drop', drop)
     }
-  }, [pick])
+  }, [addFiles, busy])
 
+  // replaceTarget sudah diisi saat kamera dibuka, jadi kamera bawaan (fallback) tahu foto mana yang diganti.
   const onCameraFail = useCallback((reason: CameraFailure) => {
     setCamera(false)
     if (reason === 'unsupported' || reason === 'other') {
@@ -307,19 +389,51 @@ export default function Classify() {
     }
     setError(cameraMessage(reason))
   }, [])
-  const onCameraClose = useCallback(() => setCamera(false), [])
+  const onCameraClose = useCallback(() => {
+    replaceTarget.current = null
+    setCamera(false)
+  }, [])
   const onCapture = useCallback(
     (f: File) => {
+      const target = replaceTarget.current
+      replaceTarget.current = null
       setCamera(false)
-      pick(f)
+      void addFiles([f], target)
     },
-    [pick],
+    [addFiles],
   )
 
-  function openCamera() {
+  function openCamera(replace: string | null = null) {
     setError(null)
+    if (!replace && getClassifyState().photos.length >= MAX_PHOTOS) {
+      setReport(buildReport(0, [], 0, true))
+      return
+    }
+    replaceTarget.current = replace
     if (cameraSupported()) setCamera(true)
     else nativeCamRef.current?.click()
+  }
+
+  function openGallery() {
+    setError(null)
+    if (getClassifyState().photos.length >= MAX_PHOTOS) {
+      setReport(buildReport(0, [], 0, true))
+      return
+    }
+    galleryRef.current?.click()
+  }
+
+  function openReplace(id: string) {
+    setError(null)
+    replaceTarget.current = id
+    replaceRef.current?.click()
+  }
+
+  function removePhoto(id: string) {
+    classifyActions.removePhoto(id)
+    setError(null)
+    if (getClassifyState().photos.length < MAX_PHOTOS)
+      setReport((r) => (r?.title.startsWith('Batas') ? null : r))
   }
 
   async function pickSample(s: Sample) {
@@ -329,7 +443,7 @@ export default function Classify() {
       if (!res.ok) throw new Error()
       const blob = await res.blob()
       const name = s.src.split('/').pop() || 'contoh.jpg'
-      pick(new File([blob], name, { type: blob.type || 'image/jpeg' }))
+      await addFiles([new File([blob], name, { type: blob.type || 'image/jpeg' })])
     } catch {
       setError('Foto contoh gagal dimuat. Periksa koneksi lalu coba lagi.')
     } finally {
@@ -337,27 +451,63 @@ export default function Classify() {
     }
   }
 
-  async function run() {
-    if (!file || busy) return
-    setBusy(true)
+  async function runSingle(photo: Photo) {
     setStage(0)
     setPending(null)
-    setError(null)
     const pace = prefersReducedMotion() ? 60 : 340
-    try {
-      const res = await classifyImage(file)
-      setPending(res)
-      // Perhitungannya sendiri hanya puluhan milidetik; tahapan ditampilkan sebentar agar bisa diikuti.
-      for (let s = 1; s < STAGES.length; s++) {
-        await sleep(pace)
-        setStage(s)
-      }
-      await sleep(pace + 120)
-      // Pengguna sudah meninggalkan halaman lewat dialog konfirmasi: jangan paksa pindah ke hasil.
+    const res = await classifyImage(photo.file)
+    setPending(res)
+    // Perhitungannya sendiri hanya puluhan milidetik; tahapan ditampilkan sebentar agar bisa diikuti.
+    for (let s = 1; s < STAGES.length; s++) {
+      await sleep(pace)
       if (!alive.current) return
-      await classifyActions.commitResult(res)
-      navigate('/hasil', { force: true })
+      setStage(s)
+    }
+    await sleep(pace + 120)
+    // Pengguna sudah meninggalkan halaman lewat dialog konfirmasi: jangan paksa pindah ke hasil.
+    if (!alive.current) return
+    await classifyActions.commitResults([{ photo, result: res }])
+    navigate('/hasil', { force: true })
+  }
+
+  async function runBatch(list: Photo[]) {
+    const pace = prefersReducedMotion() ? 0 : 160
+    const ok: { photo: Photo; result: Classification }[] = []
+    const failed: string[] = []
+    setProgress(0)
+    for (let i = 0; i < list.length; i++) {
+      if (!alive.current) return
+      classifyActions.setActive(list[i].id)
+      try {
+        ok.push({ photo: list[i], result: await classifyImage(list[i].file) })
+      } catch (e) {
+        // Kesalahan model (mis. gagal dimuat) menghentikan semuanya; kesalahan foto cukup dilewati.
+        if (e instanceof Error && e.name === 'ModelUnavailableError') throw e
+        failed.push(list[i].file.name)
+      }
+      setProgress(i + 1)
+      await sleep(pace)
+    }
+    if (!alive.current) return
+    if (ok.length === 0)
+      throw new UserFacingError('Tidak ada foto yang bisa dikenali. Coba pilih foto lain.')
+    await sleep(prefersReducedMotion() ? 0 : 250)
+    if (!alive.current) return
+    await classifyActions.commitResults(ok, failed)
+    navigate('/hasil', { force: true })
+  }
+
+  async function run() {
+    const list = getClassifyState().photos
+    if (list.length === 0 || busy || adding) return
+    setBusy(true)
+    setError(null)
+    setReport(null)
+    try {
+      if (list.length === 1) await runSingle(list[0])
+      else await runBatch(list)
     } catch (e) {
+      if (!alive.current) return
       setError(
         e instanceof UserFacingError || (e instanceof Error && e.name === 'ModelUnavailableError')
           ? e.message
@@ -367,18 +517,9 @@ export default function Classify() {
     }
   }
 
-  async function openHistory(h: HistoryItem) {
-    try {
-      const res = await classifyInput(decodeGray(h.gray))
-      classifyActions.restore(h, res)
-      navigate('/hasil', { force: true })
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Riwayat ini tidak bisa dibuka.')
-    }
-  }
-
-  const blocked = status === 'missing' || status === 'error'
-  const step = busy ? 2 : file ? 1 : 0
+  const blocked = status === 'error'
+  const step = busy ? 2 : count > 0 ? 1 : 0
+  const many = count > 1
 
   return (
     <div className="relative isolate overflow-hidden">
@@ -395,7 +536,7 @@ export default function Classify() {
         className="bg-daun/10 pointer-events-none absolute top-20 right-[-10%] -z-10 size-128 rounded-full blur-3xl"
       />
 
-      <section className="mx-auto max-w-6xl px-5 pt-28 pb-20 sm:px-6 md:pt-32">
+      <section className="mx-auto max-w-6xl px-5 pt-24 pb-16 sm:px-6 md:pt-28 md:pb-20">
         <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
           <div className="max-w-xl">
             <h1
@@ -404,13 +545,13 @@ export default function Classify() {
             >
               Pindai sampahmu
             </h1>
-            <p className="masuk text-mint-teks/85 mt-4 text-lg leading-relaxed" style={delay(120)}>
-              Ambil foto atau pilih dari galeri. Dalam beberapa detik PILAH memberi tahu jenis
-              sampahnya beserta cara membuangnya.
+            <p className="masuk text-mint-teks/85 mt-3 text-lg leading-relaxed" style={delay(120)}>
+              Ambil foto atau pilih dari galeri, satu atau sekaligus hingga {MAX_PHOTOS} foto. PILAH
+              memberi tahu jenis sampahnya beserta cara membuangnya.
             </p>
           </div>
           <ol
-            className="masuk flex items-center gap-2 text-sm"
+            className="masuk flex items-center justify-between gap-1.5 text-[0.82rem] whitespace-nowrap sm:justify-start sm:gap-2 sm:text-sm"
             style={delay(220)}
             aria-label="Tahapan"
           >
@@ -418,7 +559,7 @@ export default function Classify() {
               <li key={label} className="flex items-center gap-2">
                 <span
                   className={cn(
-                    'flex items-center gap-2 rounded-full py-1.5 pr-3.5 pl-1.5 font-medium transition-colors duration-500',
+                    'flex items-center gap-1.5 rounded-full py-1.5 pr-3 pl-1.5 font-medium transition-colors duration-500 sm:gap-2 sm:pr-3.5',
                     i === step
                       ? 'bg-emas text-rimba-950'
                       : i < step
@@ -440,7 +581,9 @@ export default function Classify() {
                   </span>
                   {label}
                 </span>
-                {i < 2 && <span aria-hidden className="h-px w-4 bg-white/15" />}
+                {i < 2 && (
+                  <span aria-hidden className="hidden h-px w-4 bg-white/15 min-[25rem]:block" />
+                )}
               </li>
             ))}
           </ol>
@@ -449,7 +592,7 @@ export default function Classify() {
         {status === 'demo' && (
           <p
             role="status"
-            className="masuk bg-krem/80 text-emas-terang ring-emas/30 mt-7 flex items-start gap-3 rounded-2xl p-4 text-sm ring-1"
+            className="masuk bg-krem/80 text-emas-terang ring-emas/30 mt-6 flex items-start gap-3 rounded-2xl px-4 py-3 text-sm ring-1"
           >
             <Icon name="alert" size={18} className="mt-0.5 shrink-0" />
             <span>
@@ -461,43 +604,97 @@ export default function Classify() {
         {blocked && (
           <div
             role="alert"
-            className="masuk bg-koral/10 ring-koral/30 mt-7 flex flex-col gap-3 rounded-2xl p-4 text-sm ring-1 sm:flex-row sm:items-center sm:justify-between"
+            className="masuk bg-koral/10 ring-koral/30 mt-6 flex flex-col gap-3 rounded-2xl p-4 text-sm ring-1 sm:flex-row sm:items-center sm:justify-between"
           >
             <p className="text-teks flex items-start gap-3">
-              <Icon
-                name={status === 'error' ? 'wifiOff' : 'alert'}
-                size={18}
-                className="text-koral mt-0.5 shrink-0"
-              />
-              {status === 'missing'
-                ? 'Model belum terpasang di server ini, jadi fitur pindai belum bisa dipakai.'
-                : modelStatus.message() ||
-                  'Model gagal dimuat. Periksa koneksi internet lalu coba lagi.'}
+              <Icon name="wifiOff" size={18} className="text-koral mt-0.5 shrink-0" />
+              {modelStatus.message() ||
+                'Model gagal dimuat. Periksa koneksi internet lalu coba lagi.'}
             </p>
-            {status === 'error' && (
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => retryModel().catch(() => undefined)}
-              >
-                <Icon name="refresh" size={16} /> Muat ulang model
-              </Button>
-            )}
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => retryModel().catch(() => undefined)}
+            >
+              <Icon name="refresh" size={16} /> Muat ulang model
+            </Button>
           </div>
         )}
 
-        <div className="mt-9 grid gap-6 lg:grid-cols-[1.45fr_1fr] lg:gap-7">
-          {/* Kiri: bingkai foto + tombol */}
+        {/* Pemberitahuan di atas kotak, supaya tinggi kotak unggah dan kotak tips tetap sama. */}
+        <div aria-live="assertive">
+          {error && (
+            <p
+              role="alert"
+              className="animate-goyang bg-koral/10 text-teks ring-koral/30 mt-6 flex items-start gap-2.5 rounded-2xl p-4 text-sm ring-1"
+            >
+              <Icon name="alert" size={18} className="text-koral mt-0.5 shrink-0" />
+              {error}
+            </p>
+          )}
+          {report && !error && (
+            <div
+              role="alert"
+              data-testid="upload-report"
+              className="animate-goyang bg-krem/70 ring-emas/35 mt-6 flex items-start gap-3 rounded-2xl p-4 text-sm ring-1"
+            >
+              <Icon name="alert" size={18} className="text-emas mt-0.5 shrink-0" />
+              <div className="min-w-0 flex-1">
+                <p className="text-emas-terang font-semibold wrap-break-word">{report.title}</p>
+                {report.rejected.length === 1 && (
+                  <p className="text-teks mt-1">{capital(report.rejected[0].reason)}.</p>
+                )}
+                {report.rejected.length > 1 && (
+                  <ul className="text-teks mt-1.5 space-y-1">
+                    {report.rejected.map((r, i) => (
+                      <li key={`${r.name}-${i}`} className="flex gap-2">
+                        <span aria-hidden className="bg-emas mt-2 size-1 shrink-0 rounded-full" />
+                        <span className="min-w-0 wrap-break-word">
+                          <strong className="font-semibold">{r.name}</strong>: {r.reason}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {report.lines.map((l) => (
+                  <p key={l} className="text-teks mt-1">
+                    {l}
+                  </p>
+                ))}
+                {report.showFormats && (
+                  <p className="text-redup mt-2 text-xs">
+                    Format yang diterima: {FORMAT_TEXT}, maksimal 15 MB per foto dan {MAX_PHOTOS}{' '}
+                    foto per pindaian.
+                  </p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setReport(null)}
+                aria-label="Tutup pemberitahuan"
+                className="text-redup -m-1 grid size-8 shrink-0 place-items-center rounded-full transition-colors hover:bg-white/10 hover:text-white"
+              >
+                <Icon name="x" size={16} />
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-8 grid gap-6 lg:grid-cols-[1.45fr_1fr] lg:gap-7">
+          {/* Kiri: bingkai foto + deretan pratinjau + tombol */}
           <div
-            className="masuk-skala kartu flex flex-col rounded-4xl p-3 sm:p-4"
+            className="masuk-skala kartu flex min-w-0 flex-col rounded-4xl p-3 sm:p-4"
             style={delay(200)}
           >
             <div
               data-testid="viewfinder"
               className={cn(
-                'relative grid aspect-[4/3.6] place-items-center overflow-hidden rounded-3xl transition-[background-color,box-shadow] duration-300 sm:aspect-4/3 lg:aspect-auto lg:min-h-96 lg:flex-1',
-                previewUrl
-                  ? 'bg-rimba-950'
+                'relative grid min-h-72 place-items-center overflow-hidden rounded-3xl py-6 transition-[background-color,box-shadow] duration-300 sm:aspect-4/3 sm:min-h-0 lg:aspect-auto lg:flex-1',
+                active ? 'lg:min-h-60' : 'lg:min-h-80',
+                active
+                  ? dragging
+                    ? 'bg-rimba-950 ring-daun ring-2'
+                    : 'bg-rimba-950'
                   : dragging
                     ? 'bg-daun/15 ring-daun ring-2'
                     : 'bg-rimba-950/60 bg-[radial-gradient(70%_70%_at_50%_45%,rgb(63_191_119/0.12),transparent_70%)] ring-1 ring-white/6',
@@ -513,52 +710,118 @@ export default function Classify() {
                   key={c}
                   aria-hidden
                   className={cn(
-                    'pointer-events-none absolute z-20 size-10 transition-colors duration-300',
-                    previewUrl ? 'border-emas' : dragging ? 'border-daun' : 'border-white/25',
+                    'pointer-events-none absolute z-20 size-10 transition-[border-color,opacity] duration-300',
+                    active ? 'opacity-0' : dragging ? 'border-daun' : 'border-white/25',
                     c,
                   )}
                 />
               ))}
 
-              {previewUrl ? (
+              {active ? (
                 <>
+                  {/* Foto ditampilkan utuh (tidak dipotong); sisa ruang diisi versi buram dari foto yang sama. */}
                   <img
-                    src={previewUrl}
-                    alt="Foto yang akan dipindai"
-                    className="halaman-masuk max-h-full max-w-full object-contain"
+                    key={`bg-${active.id}`}
+                    src={active.url}
+                    alt=""
+                    aria-hidden
+                    className="absolute inset-0 size-full scale-110 object-cover opacity-45 blur-2xl"
                   />
-                  {busy && <ProcessingOverlay result={pending} stage={stage} />}
+                  <img
+                    key={active.id}
+                    src={active.url}
+                    alt="Foto yang akan dipindai"
+                    className="halaman-masuk absolute inset-0 size-full object-contain p-3 drop-shadow-[0_12px_30px_rgb(0_0_0/0.45)] sm:p-4"
+                  />
+                  {busy &&
+                    (many ? (
+                      <BatchOverlay done={progress} total={count} />
+                    ) : (
+                      <ProcessingOverlay result={pending} stage={stage} />
+                    ))}
                   {!busy && (
-                    <div className="absolute top-4 right-4 z-30 flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() => galleryRef.current?.click()}
-                        className="bg-rimba-950/80 hover:bg-rimba-950 inline-flex h-10 items-center gap-1.5 rounded-full px-4 text-sm font-semibold text-white ring-1 ring-white/20 backdrop-blur transition-colors"
-                      >
-                        <Icon name="image" size={16} /> Ganti
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          classifyActions.setFile(null)
-                          setError(null)
-                          setNotice(null)
-                        }}
-                        aria-label="Hapus foto"
-                        className="bg-rimba-950/80 hover:bg-koral hover:text-rimba-950 grid size-10 place-items-center rounded-full text-white ring-1 ring-white/20 backdrop-blur transition-[background-color,transform] duration-300 hover:rotate-90"
-                      >
-                        <Icon name="x" size={18} />
-                      </button>
-                    </div>
+                    <>
+                      {many && (
+                        <p
+                          className="bg-rimba-950/80 absolute top-4 left-4 z-30 max-w-[45%] truncate rounded-full px-3 py-2 text-xs font-semibold text-white ring-1 ring-white/20 backdrop-blur"
+                          title={active.file.name}
+                        >
+                          <span className="angka">
+                            {activeIndex + 1} / {count}
+                          </span>
+                          <span className="text-mint-teks/80 hidden font-normal sm:inline">
+                            {' '}
+                            · {active.file.name}
+                          </span>
+                        </p>
+                      )}
+                      <div className="absolute top-4 right-4 z-30 flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => openCamera(active.id)}
+                          aria-label="Foto ulang"
+                          title="Foto ulang dengan kamera"
+                          className="bg-rimba-950/80 hover:bg-rimba-950 inline-flex h-10 items-center gap-1.5 rounded-full px-3 text-sm font-semibold text-white ring-1 ring-white/20 backdrop-blur transition-colors sm:px-4"
+                        >
+                          <Icon name="camera" size={16} />{' '}
+                          <span className="max-sm:hidden">Foto ulang</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openReplace(active.id)}
+                          aria-label="Ganti foto ini"
+                          title="Ganti dengan foto dari galeri"
+                          className="bg-rimba-950/80 hover:bg-rimba-950 inline-flex h-10 items-center gap-1.5 rounded-full px-3 text-sm font-semibold text-white ring-1 ring-white/20 backdrop-blur transition-colors sm:px-4"
+                        >
+                          <Icon name="image" size={16} />{' '}
+                          <span className="max-sm:hidden">Ganti</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removePhoto(active.id)}
+                          aria-label="Hapus foto ini"
+                          title="Hapus foto ini"
+                          className="grid size-10 place-items-center rounded-full bg-red-500/90 text-white ring-1 ring-white/20 backdrop-blur transition-[background-color,transform] duration-300 hover:rotate-90 hover:bg-red-600"
+                        >
+                          <Icon name="x" size={18} strokeWidth={2.5} />
+                        </button>
+                      </div>
+                      {many && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              classifyActions.setActive(
+                                photos[(activeIndex - 1 + count) % count].id,
+                              )
+                            }
+                            aria-label="Foto sebelumnya"
+                            className="bg-rimba-950/70 hover:bg-rimba-950 absolute top-1/2 left-3 z-30 grid size-10 -translate-y-1/2 place-items-center rounded-full text-white ring-1 ring-white/20 backdrop-blur transition-colors"
+                          >
+                            <Icon name="arrowLeft" size={18} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              classifyActions.setActive(photos[(activeIndex + 1) % count].id)
+                            }
+                            aria-label="Foto berikutnya"
+                            className="bg-rimba-950/70 hover:bg-rimba-950 absolute top-1/2 right-3 z-30 grid size-10 -translate-y-1/2 place-items-center rounded-full text-white ring-1 ring-white/20 backdrop-blur transition-colors"
+                          >
+                            <Icon name="arrowRight" size={18} />
+                          </button>
+                        </>
+                      )}
+                    </>
                   )}
                 </>
               ) : (
                 <>
-                  <EmptyArt dragging={dragging} />
+                  <EmptyArt dragging={dragging} topOnly={samples.length > 0} />
                   <div className="relative flex flex-col items-center px-8 text-center">
                     <span
                       className={cn(
-                        'relative grid size-20 place-items-center rounded-3xl transition-[transform,background-color] duration-300',
+                        'relative grid size-16 place-items-center rounded-3xl transition-[transform,background-color] duration-300 sm:size-20',
                         dragging
                           ? 'bg-daun text-rimba-950 scale-110'
                           : 'text-daun-terang bg-white/[0.07] ring-1 ring-white/10',
@@ -570,7 +833,7 @@ export default function Classify() {
                       />
                       <Icon name={dragging ? 'arrowDown' : 'camera'} size={34} strokeWidth={1.8} />
                     </span>
-                    <p className="font-display mt-5 text-xl font-semibold text-white">
+                    <p className="font-display mt-4 text-xl font-semibold text-white sm:mt-5">
                       {dragging ? (
                         'Lepaskan fotonya di sini'
                       ) : (
@@ -582,89 +845,140 @@ export default function Classify() {
                     </p>
                     <p className="text-redup mt-2 max-w-xs text-sm leading-relaxed">
                       <span className="pointer-coarse:hidden">
-                        Atau gunakan tombol di bawah. Kamu juga bisa menempel gambar dengan Ctrl+V.
+                        Satu atau beberapa foto sekaligus. Kamu juga bisa menempel gambar dengan
+                        Ctrl+V.
                       </span>
                       <span className="hidden pointer-coarse:inline">
-                        Ketuk Buka kamera untuk memotret, atau Pilih foto untuk mengambil dari
+                        Ketuk tombol kamera untuk memotret, atau pilih satu atau beberapa foto dari
                         galeri.
                       </span>
                     </p>
-                    <p className="text-redup mt-4 rounded-full bg-white/5 px-3 py-1 text-xs ring-1 ring-white/10">
-                      JPG, PNG, atau WebP hingga 15 MB
-                    </p>
+                    {samples.length > 0 && !dragging && (
+                      <div className="mt-5" data-testid="samples">
+                        <p className="text-mint-teks/70 text-xs font-semibold">
+                          Belum punya foto? Coba salah satu contoh:
+                        </p>
+                        <ul className="mt-2.5 flex flex-wrap justify-center gap-1.5 sm:gap-2">
+                          {samples.map((s) => (
+                            <li key={s.src}>
+                              <button
+                                type="button"
+                                onClick={() => void pickSample(s)}
+                                disabled={busy || !!loadingSample}
+                                className="group hover:ring-emas relative block size-11 overflow-hidden rounded-xl ring-1 ring-white/15 transition-[transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:ring-2 sm:size-14"
+                                aria-label={`Pakai ${s.label}`}
+                                title={s.label}
+                              >
+                                <img
+                                  src={s.src}
+                                  alt=""
+                                  loading="lazy"
+                                  className="size-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                />
+                                {loadingSample === s.src && (
+                                  <span className="bg-rimba-950/60 absolute inset-0 grid place-items-center">
+                                    <span className="size-5 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+                                  </span>
+                                )}
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
                 </>
               )}
+              {adding && (
+                <span className="bg-rimba-950/85 absolute inset-x-0 bottom-4 z-30 mx-auto flex w-fit items-center gap-2 rounded-full px-4 py-2 text-sm text-white ring-1 ring-white/15">
+                  <span className="size-4 animate-spin rounded-full border-2 border-white/20 border-t-white" />{' '}
+                  Memeriksa foto…
+                </span>
+              )}
             </div>
 
-            <div className="mt-3 grid grid-cols-2 gap-3">
+            {count > 0 && (
+              <PhotoStrip
+                photos={photos}
+                activeId={active?.id ?? null}
+                max={MAX_PHOTOS}
+                disabled={busy}
+                onSelect={(id) => classifyActions.setActive(id)}
+                onRemove={removePhoto}
+                onAdd={openGallery}
+                onClearAll={() => setConfirmClear(true)}
+              />
+            )}
+
+            <div className="mt-3 grid grid-cols-2 gap-3 xl:grid-cols-[1fr_1fr_1.3fr]">
               <Button
                 variant="secondary"
                 size="lg"
-                className="px-3 sm:px-7"
-                onClick={openCamera}
+                className="px-2 max-[22rem]:gap-1.5 max-[22rem]:text-[0.9rem] sm:px-6 xl:px-3"
+                onClick={() => openCamera()}
                 disabled={busy}
+                aria-label="Buka kamera"
               >
-                <Icon name="camera" size={19} /> Buka kamera
+                <Icon name="camera" size={19} className="shrink-0" />
+                <span className="sm:hidden">Kamera</span>
+                <span className="max-sm:hidden">Buka kamera</span>
               </Button>
               <Button
                 variant="secondary"
                 size="lg"
-                className="px-3 sm:px-7"
-                onClick={() => galleryRef.current?.click()}
+                className="px-2 max-[22rem]:gap-1.5 max-[22rem]:text-[0.9rem] sm:px-6 xl:px-3"
+                onClick={openGallery}
                 disabled={busy}
+                aria-label="Pilih foto"
               >
-                <Icon name="image" size={19} /> Pilih foto
+                <Icon name="image" size={19} className="shrink-0" />
+                <span className="sm:hidden">Galeri</span>
+                <span className="max-sm:hidden">Pilih foto</span>
               </Button>
-            </div>
-            <Button
-              ref={runRef}
-              size="lg"
-              className="mt-3 w-full"
-              onClick={run}
-              disabled={!file || busy || blocked || status === 'loading'}
-              data-testid="run"
-            >
-              {busy ? (
-                <>
-                  <span className="border-rimba-950/30 border-t-rimba-950 size-5 animate-spin rounded-full border-2" />
-                  Sedang mengenali…
-                </>
-              ) : status === 'loading' && file ? (
-                'Menyiapkan…'
-              ) : (
-                <>
-                  <Icon name="sparkle" size={19} /> Kenali jenisnya
-                </>
-              )}
-            </Button>
-
-            <div aria-live="assertive">
-              {error && (
-                <p
-                  role="alert"
-                  className="animate-goyang bg-koral/10 text-teks ring-koral/30 mt-3 flex items-start gap-2.5 rounded-2xl p-4 text-sm ring-1"
-                >
-                  <Icon name="alert" size={18} className="text-koral mt-0.5 shrink-0" />
-                  {error}
-                </p>
-              )}
-              {notice && !error && (
-                <p className="text-redup mt-3 flex items-start gap-2.5 px-1 text-sm">
-                  <Icon name="info" size={17} className="mt-0.5 shrink-0" />
-                  {notice}
-                </p>
-              )}
+              <Button
+                ref={runRef}
+                size="lg"
+                className="col-span-2 xl:col-span-1 xl:px-4"
+                onClick={run}
+                disabled={count === 0 || busy || blocked || adding}
+                data-testid="run"
+              >
+                {busy ? (
+                  <>
+                    <span className="border-rimba-950/30 border-t-rimba-950 size-5 animate-spin rounded-full border-2" />
+                    {many ? `Mengenali ${Math.min(progress + 1, count)}/${count}…` : 'Mengenali…'}
+                  </>
+                ) : (
+                  <>
+                    <Icon name="sparkle" size={19} />{' '}
+                    {many ? `Kenali ${count} foto` : 'Kenali jenisnya'}
+                  </>
+                )}
+              </Button>
             </div>
 
             <input
               ref={galleryRef}
               type="file"
               accept={ACCEPT}
+              multiple
               hidden
               data-testid="input-gallery"
               onChange={(e) => {
-                pick(e.target.files?.[0])
+                void addFiles(Array.from(e.target.files ?? []))
+                e.target.value = ''
+              }}
+            />
+            <input
+              ref={replaceRef}
+              type="file"
+              accept={ACCEPT}
+              hidden
+              data-testid="input-replace"
+              onChange={(e) => {
+                const target = replaceTarget.current
+                replaceTarget.current = null
+                void addFiles(Array.from(e.target.files ?? []), target)
                 e.target.value = ''
               }}
             />
@@ -676,163 +990,40 @@ export default function Classify() {
               hidden
               data-testid="input-camera"
               onChange={(e) => {
-                pick(e.target.files?.[0])
+                const target = replaceTarget.current
+                replaceTarget.current = null
+                void addFiles(Array.from(e.target.files ?? []), target)
                 e.target.value = ''
               }}
             />
           </div>
 
-          {/* Kanan: tips + contoh */}
-          <aside className="flex flex-col gap-6">
-            <div className="masuk kartu rounded-4xl p-6" style={delay(320)}>
-              <h2 className="font-display text-lg font-semibold">Biar hasilnya akurat</h2>
-              <ul className="mt-4 grid gap-2">
-                {TIPS.map((t) => (
-                  <li
-                    key={t.title}
-                    onPointerMove={trackSpotlight}
-                    className="sorot group flex items-start gap-3.5 rounded-2xl p-3 transition-colors duration-300 hover:bg-white/4"
-                  >
-                    <span className="text-emas group-hover:bg-emas group-hover:text-rimba-950 grid size-10 shrink-0 place-items-center rounded-xl bg-white/6 ring-1 ring-white/10 transition-[transform,background-color,color] duration-300 group-hover:-rotate-6">
-                      <Icon name={t.icon} size={18} />
+          {/* Kanan: tips. Kotak unggah di kiri dan kotak ini selalu sama tinggi. */}
+          <aside className="masuk kartu flex flex-col rounded-4xl p-6 sm:p-7" style={delay(320)}>
+            <h2 className="font-display text-lg font-semibold">Biar hasilnya akurat</h2>
+            <ul className="mt-3 flex flex-1 flex-col justify-between gap-1">
+              {TIPS.map((t) => (
+                <li
+                  key={t.title}
+                  onPointerMove={trackSpotlight}
+                  className="sorot group flex items-start gap-3.5 rounded-2xl px-3 py-2.5 transition-colors duration-300 hover:bg-white/4"
+                >
+                  <span className="text-emas group-hover:bg-emas group-hover:text-rimba-950 grid size-10 shrink-0 place-items-center rounded-xl bg-white/6 ring-1 ring-white/10 transition-[transform,background-color,color] duration-300 group-hover:-rotate-6">
+                    <Icon name={t.icon} size={18} />
+                  </span>
+                  <span>
+                    <span className="font-display block text-[0.95rem] font-semibold text-white">
+                      {t.title}
                     </span>
-                    <span>
-                      <span className="font-display block text-[0.95rem] font-semibold text-white">
-                        {t.title}
-                      </span>
-                      <span className="text-redup mt-0.5 block text-sm leading-relaxed">
-                        {t.text}
-                      </span>
+                    <span className="text-redup mt-0.5 block text-sm leading-relaxed">
+                      {t.text}
                     </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {samples.length > 0 ? (
-              <div className="masuk kartu flex-1 rounded-4xl p-6" style={delay(420)}>
-                <h2 className="font-display text-lg font-semibold">Belum punya foto?</h2>
-                <p className="text-redup mt-1 text-sm">Coba pakai salah satu foto contoh ini.</p>
-                <ul className="mt-4 grid grid-cols-3 gap-2.5">
-                  {samples.map((s) => (
-                    <li key={s.src}>
-                      <button
-                        type="button"
-                        onClick={() => void pickSample(s)}
-                        disabled={busy || !!loadingSample}
-                        className="group hover:shadow-angkat hover:ring-emas/60 relative block aspect-square w-full overflow-hidden rounded-2xl ring-1 ring-white/10 transition-[transform,box-shadow] duration-300 hover:-translate-y-0.5"
-                        aria-label={`Pakai ${s.label}`}
-                      >
-                        <img
-                          src={s.src}
-                          alt=""
-                          loading="lazy"
-                          className="size-full object-cover transition-transform duration-500 group-hover:scale-110"
-                        />
-                        <span className="from-rimba-950/70 absolute inset-0 bg-linear-to-t to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                        <span className="absolute inset-x-0 bottom-1.5 text-center text-[11px] font-semibold text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                          Pakai
-                        </span>
-                        {loadingSample === s.src && (
-                          <span className="bg-rimba-950/60 absolute inset-0 grid place-items-center">
-                            <span className="size-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
-                          </span>
-                        )}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : (
-              <div className="masuk kartu flex-1 rounded-4xl p-6" style={delay(420)}>
-                <h2 className="font-display text-lg font-semibold">Yang bisa dikenali</h2>
-                <p className="text-redup mt-1 text-sm">
-                  Dua kelompok sampah rumah tangga sehari-hari.
-                </p>
-                {(['organik', 'anorganik'] as const).map((k) => (
-                  <div key={k} className="mt-4">
-                    <p
-                      className={cn(
-                        'text-sm font-semibold',
-                        k === 'organik' ? 'text-daun-terang' : 'text-emas-terang',
-                      )}
-                    >
-                      {k === 'organik' ? 'Organik' : 'Anorganik'}
-                    </p>
-                    <ul className="mt-2 flex flex-wrap gap-1">
-                      {Object.values(ITEMS)
-                        .filter((it) => it.kind === k)
-                        .map((it) => (
-                          <li key={it.id}>
-                            <img
-                              src={it.src}
-                              alt={it.label}
-                              title={it.label}
-                              className="size-11 transition-transform duration-300 hover:-translate-y-1 hover:scale-110"
-                            />
-                          </li>
-                        ))}
-                    </ul>
-                  </div>
-                ))}
-              </div>
-            )}
-          </aside>
-        </div>
-
-        {history.length > 0 && (
-          <Reveal className="mt-10">
-            <div className="flex items-center justify-between">
-              <h2 className="font-display text-lg font-semibold">Pindaian sesi ini</h2>
-              <button
-                type="button"
-                onClick={() => classifyActions.clearHistory()}
-                className="text-redup hover:bg-koral/10 hover:text-koral rounded-full px-3 py-1.5 text-sm transition-colors"
-              >
-                Hapus riwayat
-              </button>
-            </div>
-            <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" data-testid="history">
-              {history.map((h) => (
-                <li key={h.id}>
-                  <button
-                    type="button"
-                    onClick={() => void openHistory(h)}
-                    className="kartu group flex w-full items-center gap-3 rounded-2xl p-2.5 text-left transition-[transform,border-color] duration-300 hover:-translate-y-0.5 hover:border-white/25"
-                  >
-                    {h.thumb ? (
-                      <img src={h.thumb} alt="" className="size-14 rounded-xl object-cover" />
-                    ) : (
-                      <span className="size-14 rounded-xl bg-white/10" />
-                    )}
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-semibold text-white">
-                        {h.uncertain
-                          ? 'Belum yakin'
-                          : h.kind === 'organik'
-                            ? 'Organik'
-                            : 'Anorganik'}
-                      </span>
-                      <span className="text-redup block truncate text-xs">{h.name}</span>
-                    </span>
-                    <span
-                      className={cn(
-                        'angka shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold',
-                        h.uncertain
-                          ? 'bg-white/10 text-white'
-                          : h.kind === 'organik'
-                            ? 'bg-daun/20 text-daun-terang'
-                            : 'bg-emas/20 text-emas-terang',
-                      )}
-                    >
-                      {pct(h.kind === 'anorganik' ? h.y : 1 - h.y)}
-                    </span>
-                  </button>
+                  </span>
                 </li>
               ))}
             </ul>
-          </Reveal>
-        )}
+          </aside>
+        </div>
       </section>
 
       {camera && (
@@ -840,30 +1031,68 @@ export default function Classify() {
       )}
 
       <ConfirmDialog
+        open={confirmClear}
+        title="Hapus semua foto?"
+        media={<PhotoStack photos={photos} />}
+        confirmLabel="Ya, hapus semua"
+        cancelLabel="Batal"
+        onCancel={() => setConfirmClear(false)}
+        onConfirm={() => {
+          setConfirmClear(false)
+          classifyActions.clearPhotos()
+          setReport(null)
+          setError(null)
+        }}
+      >
+        {count} foto yang sudah kamu pilih akan dihapus dari daftar. Kamu bisa memilih foto lain
+        setelahnya.
+      </ConfirmDialog>
+
+      <ConfirmDialog
         open={leaveTo !== null}
-        title="Tinggalkan halaman pindai?"
-        media={
-          previewUrl ? (
-            <img
-              src={previewUrl}
-              alt=""
-              className="size-20 rounded-2xl object-cover ring-4 ring-white/10"
-            />
-          ) : undefined
+        title={busy ? 'Pindaian sedang berjalan' : 'Tinggalkan halaman pindai?'}
+        media={count > 0 ? <PhotoStack photos={photos} /> : undefined}
+        confirmLabel={
+          busy ? 'Hentikan & pindah' : many ? 'Hapus semua & pindah' : 'Hapus foto & pindah'
         }
-        confirmLabel="Ya, tinggalkan"
-        cancelLabel="Lanjutkan pindai"
+        cancelLabel={busy ? 'Tunggu hasilnya' : 'Tetap di sini'}
         onCancel={() => setLeaveTo(null)}
         onConfirm={() => {
           const to = leaveTo
           setLeaveTo(null)
-          classifyActions.setFile(null)
+          classifyActions.reset()
           if (to) navigate(to, { force: true })
         }}
       >
-        Foto yang kamu pilih belum dikenali. Kalau pindah halaman sekarang, foto ini akan dihapus
-        dan perlu dipilih ulang nanti.
+        {busy
+          ? `PILAH sedang mengenali ${many ? `${count} fotomu` : 'fotomu'} dan hasilnya tinggal beberapa detik lagi. Jika pindah sekarang, pindaian dihentikan dan ${many ? 'semua foto' : 'fotonya'} ikut dihapus.`
+          : many
+            ? `${count} foto yang sudah kamu pilih belum dikenali. Jika pindah halaman sekarang, semua foto ini akan dihapus dan perlu dipilih lagi dari awal.`
+            : 'Fotomu sudah siap, tapi belum dikenali. Jika pindah halaman sekarang, foto ini akan dihapus dan kamu perlu memilihnya lagi dari awal.'}
       </ConfirmDialog>
     </div>
+  )
+}
+
+/** Tumpukan kecil foto untuk dialog (maksimal tiga, sisanya ditulis sebagai angka). */
+function PhotoStack({ photos }: { photos: Photo[] }) {
+  const shown = photos.slice(0, 3)
+  return (
+    <span className="relative flex items-center">
+      {shown.map((p, i) => (
+        <img
+          key={p.id}
+          src={p.url}
+          alt=""
+          className={cn('ring-panel size-18 rounded-2xl object-cover ring-4', i > 0 && '-ml-7')}
+          style={{ transform: `rotate(${(i - (shown.length - 1) / 2) * 7}deg)`, zIndex: 3 - i }}
+        />
+      ))}
+      {photos.length > 3 && (
+        <span className="bg-emas font-display text-rimba-950 ring-panel absolute -right-3 -bottom-2 z-10 rounded-full px-2 py-0.5 text-xs font-bold ring-2">
+          +{photos.length - 3}
+        </span>
+      )}
+    </span>
   )
 }

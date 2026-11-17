@@ -132,17 +132,16 @@ export default function NotFound() {
   const copy = COPY[status]
 
   return (
-    <section className="relative mx-auto flex min-h-[88vh] max-w-3xl flex-col items-center overflow-hidden px-5 pt-24 pb-16 text-center sm:pt-28">
-      <span
-        aria-hidden
-        className="font-display pointer-events-none absolute top-16 left-1/2 -translate-x-1/2 text-[min(44vw,14rem)] leading-none font-bold text-white/4 select-none"
-      >
-        404
-      </span>
-
-      <div className="relative z-10 mt-6">
+    <section className="relative isolate mx-auto flex min-h-svh max-w-3xl flex-col items-center justify-center overflow-hidden px-5 pt-24 pb-16 text-center sm:pt-28">
+      <div className="relative">
+        <span
+          aria-hidden
+          className="font-display pointer-events-none absolute -top-10 left-1/2 -z-10 -translate-x-1/2 text-[min(44vw,14rem)] leading-none font-bold text-white/4 select-none sm:-top-14"
+        >
+          404
+        </span>
         <div
-          className="masuk-skala relative mx-auto touch-none"
+          className="masuk-skala relative z-10 mx-auto touch-none"
           style={{ width: STAGE_W, height: 150 + BH }}
           data-testid="404-stage"
         >
@@ -216,7 +215,7 @@ export default function NotFound() {
           <p className="text-redup mx-auto mt-3 max-w-md text-lg">{copy.body}</p>
         </div>
         <div
-          className="masuk mt-8 flex flex-wrap justify-center gap-3"
+          className="masuk mx-auto mt-8 grid max-w-xs gap-3 sm:flex sm:max-w-none sm:flex-wrap sm:justify-center"
           style={{ animationDelay: '300ms' }}
         >
           <ButtonLink to="/" size="lg" variant={status === 'done' ? 'primary' : 'secondary'}>

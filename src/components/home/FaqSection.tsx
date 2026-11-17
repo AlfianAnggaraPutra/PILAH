@@ -6,9 +6,9 @@ import { Link } from '@/lib/router'
 import { cn } from '@/lib/utils'
 
 export function FaqSection() {
-  const [open, setOpen] = useState<number | null>(0)
+  const [open, setOpen] = useState<number | null>(null)
   return (
-    <section id="faq" className="bg-latar-2 relative overflow-hidden py-24 md:py-32">
+    <section id="faq" className="bg-latar-2 relative overflow-hidden py-16 md:py-24">
       <div
         aria-hidden
         className="pola-titik absolute inset-0 mask-[linear-gradient(to_bottom,black,transparent_70%)] opacity-50"

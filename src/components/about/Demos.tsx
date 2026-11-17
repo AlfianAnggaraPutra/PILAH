@@ -266,9 +266,12 @@ export function SigmoidDemo() {
   const [yin, setYin] = useState(2)
   const y = 1 / (1 + Math.exp(-yin))
   const W = 320
-  const H = 150
-  const X = (v: number) => ((v + 6) / 12) * W
-  const Y = (v: number) => H - 12 - v * (H - 24)
+  const H = 176
+  // Pita label di atas (0..BAND) terpisah dari area kurva, jadi titik dan garis tidak pernah menabrak label.
+  const BAND = 28
+  const PAD = 14 // jarak aman agar titik (r = 7) tetap utuh di ujung atas/bawah kurva
+  const X = (v: number) => 9 + ((v + 6) / 12) * (W - 18)
+  const Y = (v: number) => H - PAD - v * (H - BAND - 2 * PAD)
   const path = Array.from({ length: 61 }, (_, i) => {
     const v = -6 + (12 * i) / 60
     return `${i ? 'L' : 'M'}${X(v).toFixed(1)},${Y(1 / (1 + Math.exp(-v))).toFixed(1)}`
@@ -285,8 +288,25 @@ export function SigmoidDemo() {
           role="img"
           aria-label={`Sigmoid dari ${fmt(yin, 1)} adalah ${fmt(y, 4)}`}
         >
-          <rect x="0" y="0" width={W / 2} height={H} fill="#3fbf77" opacity=".08" />
-          <rect x={W / 2} y="0" width={W / 2} height={H} fill="#ffc247" opacity=".08" />
+          <rect x="0" y={BAND} width={W / 2} height={H - BAND} fill="#3fbf77" opacity=".08" />
+          <rect x={W / 2} y={BAND} width={W / 2} height={H - BAND} fill="#ffc247" opacity=".08" />
+          <line x1="0" x2={W} y1={BAND} y2={BAND} stroke="#ecf6f0" strokeOpacity=".12" />
+          <line x1={W / 2} x2={W / 2} y1={BAND} y2={H} stroke="#ecf6f0" strokeOpacity=".12" />
+          <circle cx="12" cy={BAND / 2} r="4" fill="#3fbf77" />
+          <text x="22" y={BAND / 2 + 4} fontSize="11" fill="#8cebb3" fontWeight="600">
+            organik (y &lt; 0,5)
+          </text>
+          <circle cx={W - 12} cy={BAND / 2} r="4" fill="#ffc247" />
+          <text
+            x={W - 22}
+            y={BAND / 2 + 4}
+            fontSize="11"
+            fill="#ffe08f"
+            fontWeight="600"
+            textAnchor="end"
+          >
+            anorganik (y ≥ 0,5)
+          </text>
           <line
             x1="0"
             x2={W}
@@ -306,12 +326,6 @@ export function SigmoidDemo() {
             strokeWidth="2"
             style={{ transition: 'cx .15s, cy .15s' }}
           />
-          <text x="8" y="16" fontSize="11" fill="#8cebb3" fontWeight="600">
-            organik
-          </text>
-          <text x={W - 8} y="16" fontSize="11" fill="#ffe08f" fontWeight="600" textAnchor="end">
-            anorganik
-          </text>
         </svg>
         <label className="mt-3 block text-sm font-semibold" htmlFor="slider-yin">
           Geser nilai y_in: <span className="angka">{fmt(yin, 1)}</span>

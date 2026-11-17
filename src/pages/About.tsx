@@ -11,7 +11,6 @@ import {
   PHOTOS,
   PIPELINE,
   PROJECT_LABEL,
-  REFERENCES,
   RESEARCH_TITLE,
   SUPERVISOR,
   TEAM,
@@ -28,7 +27,6 @@ const SECTIONS = [
   { id: 'cara-kerja', label: 'Cara kerja' },
   { id: 'model', label: 'Model & data' },
   { id: 'tim', label: 'Tim' },
-  { id: 'referensi', label: 'Referensi' },
 ] as const
 
 function useActiveSection() {
@@ -90,7 +88,7 @@ function Hero() {
           PILAH lahir dari keinginan sederhana: membuat memilah sampah terasa mudah bagi siapa saja.
           Kenali alasan kami membuatnya, cara kerjanya, dan orang-orang di baliknya.
         </p>
-        <div className="masuk mt-9 flex flex-wrap gap-3" style={delay(700)}>
+        <div className="masuk mt-9 grid gap-3 sm:flex sm:flex-wrap" style={delay(700)}>
           <ButtonLink to="/klasifikasi" size="lg">
             <Icon name="scan" size={19} /> Coba PILAH
           </ButtonLink>
@@ -100,7 +98,7 @@ function Hero() {
               e.preventDefault()
               document.getElementById('cara-kerja')?.scrollIntoView({ behavior: 'smooth' })
             }}
-            className="kilau font-display inline-flex h-14 items-center gap-2 rounded-full bg-white/6 px-7 font-semibold text-white ring-1 ring-white/15 backdrop-blur transition-[background-color,transform] duration-300 hover:-translate-y-0.5 hover:bg-white/11"
+            className="kilau font-display inline-flex h-14 items-center justify-center gap-2 rounded-full bg-white/6 px-7 font-semibold text-white ring-1 ring-white/15 backdrop-blur transition-[background-color,transform] duration-300 hover:-translate-y-0.5 hover:bg-white/11"
           >
             Lihat cara kerjanya
           </a>
@@ -145,7 +143,7 @@ function SubNav() {
 
 function Background() {
   return (
-    <section id="latar" className="mx-auto max-w-6xl scroll-mt-12 px-5 py-24 sm:px-6 md:py-28">
+    <section id="latar" className="mx-auto max-w-6xl scroll-mt-12 px-5 py-16 sm:px-6 md:py-24">
       <div className="grid gap-12 lg:grid-cols-[1.1fr_0.9fr]">
         <SectionHead title="Kenapa kami membuat PILAH">
           <p>
@@ -218,7 +216,7 @@ function HowItWorks() {
   return (
     <section
       id="cara-kerja"
-      className="bg-latar-2 relative scroll-mt-12 overflow-hidden py-24 md:py-28"
+      className="bg-latar-2 relative scroll-mt-12 overflow-hidden py-16 md:py-24"
     >
       <div
         aria-hidden
@@ -394,10 +392,10 @@ function Metric({ label, value, hint }: { label: string; value: number; hint: st
   return (
     <div
       onPointerMove={trackSpotlight}
-      className="kartu sorot group rounded-2xl p-5 transition-[transform,border-color] duration-500 hover:-translate-y-1 hover:border-white/20"
+      className="kartu sorot group min-w-0 rounded-2xl p-4 transition-[transform,border-color] duration-500 hover:-translate-y-1 hover:border-white/20 sm:p-5"
     >
       <p className="text-redup text-sm">{label}</p>
-      <p className="font-display angka mt-1 text-3xl font-bold text-white">
+      <p className="font-display angka mt-1 text-2xl font-bold text-white sm:text-3xl">
         {fmt(value * 100, 2)}%
       </p>
       <p className="text-redup group-hover:text-mint-teks mt-2 text-xs leading-relaxed transition-colors duration-300">
@@ -422,7 +420,7 @@ function ModelSection() {
   const tr = !mock ? meta?.training : undefined
 
   return (
-    <section id="model" className="mx-auto max-w-6xl scroll-mt-12 px-5 py-24 sm:px-6 md:py-28">
+    <section id="model" className="mx-auto max-w-6xl scroll-mt-12 px-5 py-16 sm:px-6 md:py-24">
       <SectionHead title="Model dan data">
         <p>
           Data diambil dari dataset {DATASET.name} di Kaggle, karya {DATASET.author}. Dari{' '}
@@ -521,7 +519,7 @@ function ModelSection() {
           <h3 className="font-display text-lg font-semibold">Hasil evaluasi pada 400 citra uji</h3>
           {m ? (
             <>
-              <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
                 <Metric
                   label="Accuracy"
                   value={m.accuracy}
@@ -630,7 +628,7 @@ function ModelSection() {
 
 function Team() {
   return (
-    <section id="tim" className="bg-latar-2 relative scroll-mt-12 overflow-hidden py-24 md:py-28">
+    <section id="tim" className="bg-latar-2 relative scroll-mt-12 overflow-hidden py-16 md:py-24">
       <div
         aria-hidden
         className="pola-titik absolute inset-0 mask-[radial-gradient(60%_60%_at_50%_40%,black,transparent)] opacity-40"
@@ -713,29 +711,21 @@ function Team() {
   )
 }
 
-function References() {
+function ClosingCta() {
   return (
-    <section id="referensi" className="mx-auto max-w-4xl scroll-mt-12 px-5 py-24 sm:px-6">
-      <SectionHead title="Referensi" />
-      <Reveal gaya="naik">
-        <ol className="text-redup mt-8 space-y-3 text-sm leading-relaxed">
-          {REFERENCES.map((r) => (
-            <li
-              key={r}
-              className="hover:text-mint-teks pl-8 -indent-8 transition-colors duration-200"
-            >
-              {r}
-            </li>
-          ))}
-        </ol>
-      </Reveal>
-      <Reveal gaya="skala" className="mt-14">
-        <div className="flex flex-col items-start gap-4 rounded-[1.75rem] border border-white/10 bg-[linear-gradient(120deg,var(--color-mint),var(--color-kartu))] p-7 sm:flex-row sm:items-center sm:justify-between">
-          <p className="font-display text-xl font-semibold">
-            Sudah paham cara kerjanya? Coba langsung.
-          </p>
-          <ButtonLink to="/klasifikasi">
-            <Icon name="scan" size={18} /> Pindai sampah
+    <section className="mx-auto max-w-6xl px-5 py-16 sm:px-6 md:py-20">
+      <Reveal gaya="skala">
+        <div className="flex flex-col items-start gap-5 rounded-[1.75rem] border border-white/10 bg-[linear-gradient(120deg,var(--color-mint),var(--color-kartu))] p-7 sm:flex-row sm:items-center sm:justify-between sm:p-9">
+          <div>
+            <p className="font-display text-xl font-semibold sm:text-2xl">
+              Sudah paham cara kerjanya? Coba langsung.
+            </p>
+            <p className="text-redup mt-1.5">
+              Foto satu sampah, dan lihat sendiri bagaimana PILAH mengenalinya.
+            </p>
+          </div>
+          <ButtonLink to="/klasifikasi" size="lg" className="shrink-0">
+            <Icon name="scan" size={19} /> Pindai sampah
           </ButtonLink>
         </div>
       </Reveal>
@@ -752,7 +742,7 @@ export default function About() {
       <HowItWorks />
       <ModelSection />
       <Team />
-      <References />
+      <ClosingCta />
     </>
   )
 }

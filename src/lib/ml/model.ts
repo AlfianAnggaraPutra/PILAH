@@ -3,7 +3,7 @@ import type { LoadedModel, ModelMeta, ModelWeights } from './types'
 const META_URL = '/model/meta.json'
 const BIN_URL = '/model/model.bin'
 
-export type ModelStatus = 'loading' | 'ready' | 'demo' | 'missing' | 'error'
+export type ModelStatus = 'loading' | 'ready' | 'demo' | 'error'
 
 export class ModelUnavailableError extends Error {
   constructor(message: string) {
@@ -50,7 +50,7 @@ export function parseWeights(buf: ArrayBuffer, m: ModelMeta): ModelWeights {
   return { K, bc, V, v0, w, w0 }
 }
 
-/** Bobot acak kecil — HANYA untuk mode dev agar UI bisa dicoba sebelum model.bin ada. */
+/** Bobot acak kecil, hanya untuk mode demo agar alur bisa dicoba sebelum model.bin dipasang. */
 function mockWeights(m: ModelMeta): ModelWeights {
   let s = 1234567
   const rnd = () => ((s = (s * 1664525 + 1013904223) >>> 0) / 2 ** 32 - 0.5) * 2
@@ -110,18 +110,14 @@ export function loadModel(): Promise<LoadedModel> {
       return model
     } catch (err) {
       const missing = err instanceof ModelUnavailableError && err.message === 'missing'
-      if (import.meta.env.DEV && missing) {
-        console.warn('[PILAH] model.bin belum ada, memakai bobot acak (mode demo).')
+      // Berkas model belum diunggah: tetap bisa dicoba dengan bobot acak, ditandai jelas sebagai mode demo.
+      // Begitu model.bin + meta.json dari Colab ditaruh di public/model/, prediksi sungguhan dipakai otomatis.
+      if (missing) {
+        console.warn('[PILAH] model.bin belum ada di /model/, memakai bobot acak (mode demo).')
         setStatus('demo')
         return { meta: DEFAULT_META, weights: mockWeights(DEFAULT_META), isMock: true }
       }
       cache = null // izinkan mencoba lagi
-      if (missing) {
-        setStatus('missing', 'Model belum terpasang di server ini.')
-        throw new ModelUnavailableError(
-          'Model belum terpasang di server ini, jadi pindaian belum bisa dijalankan.',
-        )
-      }
       const msg =
         err instanceof ModelUnavailableError
           ? err.message

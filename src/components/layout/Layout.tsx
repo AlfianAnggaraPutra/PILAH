@@ -50,7 +50,7 @@ function useHomeSection(pathname: string) {
   return onHome ? section : null
 }
 
-/** Garis progres gulir di batas bawah header (pengganti bilah gulir browser). */
+/** Garis progres gulir di tepi paling atas layar (pengganti bilah gulir browser). */
 function ScrollProgress() {
   const ref = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -77,15 +77,13 @@ function ScrollProgress() {
     }
   }, [])
   return (
-    <div aria-hidden className="absolute inset-x-0 bottom-0 h-0.5 bg-white/6">
+    <div aria-hidden className="fixed inset-x-0 top-0 z-50 h-0.75">
       <div
         ref={ref}
         data-testid="scroll-progress"
-        className="from-daun via-daun-terang to-emas relative h-full origin-left bg-linear-to-r will-change-transform"
+        className="from-daun via-daun-terang to-emas h-full origin-left bg-linear-to-r shadow-[0_0_10px_rgb(255_194_71/0.55)] will-change-transform"
         style={{ transform: 'scaleX(0)' }}
-      >
-        <span className="bg-emas absolute top-1/2 right-0 size-1.5 translate-x-1/2 -translate-y-1/2 rounded-full shadow-[0_0_12px_3px_rgb(255_194_71/0.7)]" />
-      </div>
+      />
     </div>
   )
 }
@@ -160,7 +158,6 @@ function TopBar() {
           </Link>
         </nav>
       </div>
-      <ScrollProgress />
     </header>
   )
 }
@@ -243,7 +240,7 @@ function BottomNav() {
 
 function Copyright() {
   return (
-    <p className="text-redup text-center text-xs leading-relaxed sm:text-left">
+    <p className="text-redup text-center text-xs leading-relaxed">
       © {INSTITUTION.year} PILAH. {PROJECT_LABEL}, {INSTITUTION.university}.
     </p>
   )
@@ -266,8 +263,8 @@ function Footer({ minimal }: { minimal: boolean }) {
         aria-hidden
         className="bg-daun/10 pointer-events-none absolute -top-40 left-1/2 h-80 w-200 -translate-x-1/2 rounded-full blur-3xl"
       />
-      <div className="relative mx-auto grid max-w-6xl gap-10 px-5 pt-16 pb-10 sm:px-6 md:grid-cols-[1.4fr_1fr_1fr]">
-        <div>
+      <div className="relative mx-auto grid max-w-6xl gap-10 px-5 pt-16 pb-10 sm:grid-cols-2 sm:px-6 lg:grid-cols-[1.4fr_1fr_1fr]">
+        <div className="sm:col-span-2 lg:col-span-1">
           <Link to="/" className="group inline-flex items-center gap-3 rounded-xl text-white">
             <LogoMark className="h-10 transition-transform duration-500 group-hover:-rotate-6" />
             <Wordmark className="text-2xl" />
@@ -339,6 +336,7 @@ export function Layout({ children }: { children: ReactNode }) {
       >
         Langsung ke konten
       </a>
+      <ScrollProgress />
       <TopBar />
       <main id="konten" className="flex-1 overflow-x-clip">
         {children}

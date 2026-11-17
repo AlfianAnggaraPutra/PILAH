@@ -105,7 +105,11 @@ export function RouterProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const onPop = () => {
       const target = currentUrl()
-      if (blockerRef.current && blockerRef.current(target)) {
+      // Berpindah di dalam halaman yang sama (mis. /hasil?foto=… → /hasil) tidak perlu ditahan.
+      const samePath =
+        normalize(window.location.pathname) ===
+        normalize(new URL(lastUrl.current, window.location.href).pathname)
+      if (!samePath && blockerRef.current && blockerRef.current(target)) {
         // Batalkan tombol back: kembalikan alamat semula, keputusan diserahkan ke modal.
         window.history.pushState(null, '', lastUrl.current)
         return

@@ -8,13 +8,6 @@ import { cn } from '@/lib/utils'
 const TOPICS: ('Semua' | NewsTopic)[] = ['Semua', 'Kebijakan', 'TPA', 'Daur ulang', 'Gerakan warga']
 const INITIAL = 7
 
-const TOPIC_STYLE: Record<NewsTopic, string> = {
-  Kebijakan: 'bg-emas text-rimba-950',
-  TPA: 'bg-koral text-rimba-950',
-  'Daur ulang': 'bg-daun text-rimba-950',
-  'Gerakan warga': 'bg-mint-teks text-rimba-950',
-}
-
 const fmtDate = (iso: string) =>
   new Date(`${iso}T00:00:00`).toLocaleDateString('id-ID', {
     day: 'numeric',
@@ -49,14 +42,6 @@ function NewsImage({ item, featured }: { item: NewsItem; featured: boolean }) {
         aria-hidden
         className="from-rimba-950/90 via-rimba-950/20 absolute inset-0 bg-linear-to-t to-transparent"
       />
-      <span
-        className={cn(
-          'font-display absolute top-4 left-4 rounded-full px-3 py-1 text-xs font-semibold',
-          TOPIC_STYLE[item.topic],
-        )}
-      >
-        {item.topic}
-      </span>
       <span className="absolute right-3 bottom-2.5 text-[10px] text-white/55">
         Foto ilustrasi: {item.photo.by} / Unsplash
       </span>
@@ -138,7 +123,7 @@ export function NewsSection() {
   const shown = all ? list : list.slice(0, INITIAL)
 
   return (
-    <section id="berita" className="relative overflow-hidden py-24 md:py-32">
+    <section id="berita" className="relative overflow-hidden py-16 md:py-24">
       <div
         aria-hidden
         className="pola-kisi absolute inset-0 mask-[radial-gradient(70%_60%_at_50%_30%,black,transparent)]"
@@ -214,10 +199,6 @@ export function NewsSection() {
             </button>
           </div>
         )}
-        <p className="text-redup/80 mt-8 text-center text-xs">
-          Foto pada kartu berita adalah foto ilustrasi dari Unsplash, bukan dokumentasi asli dari
-          media terkait.
-        </p>
       </div>
     </section>
   )

@@ -1,65 +1,91 @@
 /**
  * Status pindaian yang dibagi antara halaman Pindai dan Hasil.
- * Hasil terakhir dan riwayat sesi disimpan ringkas di sessionStorage (thumbnail + matriks input 64×64),
- * sehingga halaman Hasil tetap utuh saat dimuat ulang dan model bisa menghitung ulang semua tahapnya.
+ *
+ * Satu sesi = daftar foto (maksimal 20) + hasilnya. Hasil disimpan ringkas di sessionStorage
+ * (thumbnail + matriks input 64×64) hanya supaya halaman Hasil tetap utuh saat dimuat ulang.
+ * Begitu pengguna meninggalkan halaman Hasil atau memulai pindaian baru (setelah konfirmasi),
+ * sesi ini dihapus.
  */
 import { useSyncExternalStore } from 'react'
 import type { Classification } from '@/lib/ml/classify'
-import type { WasteKind } from '@/lib/items'
 
-export interface HistoryItem {
+/** Foto yang sudah dipilih dan menunggu dikenali. */
+export interface Photo {
   id: string
-  at: number
+  file: File
+  url: string
+}
+
+/** Satu foto yang sudah dikenali. */
+export interface ScanItem {
+  id: string
+  name: string
+  /** Gambar untuk ditampilkan: foto asli selama sesi berjalan, atau thumbnail setelah dimuat ulang. */
+  src: string
+  /** Thumbnail persegi (data URL JPEG), dipakai juga di laporan PDF. */
+  thumb: string
+  result: Classification
+}
+
+/** Bentuk tersimpan di sessionStorage (tanpa hasil antara CNN; dihitung ulang saat dipulihkan). */
+export interface SavedItem {
+  id: string
+  name: string
   thumb: string
   /** Matriks input 64×64 dikuantisasi ke 0–255 lalu base64. */
   gray: string
-  kind: WasteKind
+  /** Peluang anorganik saat dipindai (untuk pengecekan; hasil dihitung ulang saat dipulihkan). */
   y: number
-  uncertain: boolean
-  name: string
 }
 
 interface State {
-  file: File | null
-  previewUrl: string | null
-  result: Classification | null
-  /** id riwayat yang sedang ditampilkan di halaman Hasil */
-  currentId: string | null
-  history: HistoryItem[]
+  photos: Photo[]
+  /** Foto yang sedang ditampilkan besar di bingkai. */
+  activeId: string | null
+  items: ScanItem[]
+  /** Waktu pindaian selesai (ms), untuk laporan. */
+  scannedAt: number | null
+  /** Nama berkas yang gagal dikenali saat pindaian banyak foto. */
+  failed: string[]
+  /** Salinan tersimpan, untuk dipulihkan saat halaman Hasil dimuat ulang. */
+  saved: { at: number; items: SavedItem[] } | null
 }
 
-const HISTORY_KEY = 'pilah:riwayat'
-const MAX_HISTORY = 8
+const KEY = 'pilah:hasil'
+const LEGACY_KEY = 'pilah:riwayat'
 
-function loadHistory(): HistoryItem[] {
+function loadSaved(): State['saved'] {
   try {
-    const raw = sessionStorage.getItem(HISTORY_KEY)
-    const arr = raw ? (JSON.parse(raw) as HistoryItem[]) : []
-    return Array.isArray(arr) ? arr.filter((h) => h && typeof h.gray === 'string') : []
+    sessionStorage.removeItem(LEGACY_KEY) // riwayat dari versi lama tidak dipakai lagi
+    const raw = sessionStorage.getItem(KEY)
+    const data = raw ? (JSON.parse(raw) as State['saved']) : null
+    return data &&
+      Array.isArray(data.items) &&
+      data.items.length > 0 &&
+      data.items.every((i) => typeof i.gray === 'string')
+      ? data
+      : null
   } catch {
-    return []
+    return null
   }
 }
 
-function saveHistory(items: HistoryItem[]) {
+function persist(saved: State['saved']) {
   try {
-    sessionStorage.setItem(HISTORY_KEY, JSON.stringify(items))
+    if (saved) sessionStorage.setItem(KEY, JSON.stringify(saved))
+    else sessionStorage.removeItem(KEY)
   } catch {
-    // Kuota penuh atau mode privat: coba simpan lebih sedikit, kalau tetap gagal abaikan.
-    try {
-      sessionStorage.setItem(HISTORY_KEY, JSON.stringify(items.slice(0, 3)))
-    } catch {
-      /* abaikan */
-    }
+    /* kuota penuh atau mode privat: halaman Hasil tetap jalan, hanya tidak bisa dipulihkan */
   }
 }
 
 let state: State = {
-  file: null,
-  previewUrl: null,
-  result: null,
-  currentId: null,
-  history: typeof window === 'undefined' ? [] : loadHistory(),
+  photos: [],
+  activeId: null,
+  items: [],
+  scannedAt: null,
+  failed: [],
+  saved: typeof window === 'undefined' ? null : loadSaved(),
 }
 const listeners = new Set<() => void>()
 
@@ -83,50 +109,106 @@ export function useClassifyStore() {
   )
 }
 
-function revoke(url: string | null) {
+function revoke(url: string | null | undefined) {
   if (url?.startsWith('blob:')) URL.revokeObjectURL(url)
 }
 
+let seq = 0
+const newId = () =>
+  `${Date.now().toString(36)}${(seq++).toString(36)}${Math.random().toString(36).slice(2, 5)}`
+
 export const classifyActions = {
-  setFile(file: File | null) {
-    revoke(state.previewUrl)
-    set({ file, previewUrl: file ? URL.createObjectURL(file) : null, result: null, currentId: null })
+  /** Tambahkan foto (sudah disaring). Foto pertama yang baru ditambahkan langsung ditampilkan. */
+  addPhotos(files: File[]) {
+    if (files.length === 0) return
+    const added = files.map((file) => ({ id: newId(), file, url: URL.createObjectURL(file) }))
+    set({ photos: [...state.photos, ...added], activeId: added[0].id })
   },
 
-  /** Simpan hasil baru + tambahkan ke riwayat sesi. */
-  async commitResult(result: Classification) {
-    const id = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
-    set({ result, currentId: id })
-    const thumb = state.previewUrl ? await makeThumb(state.previewUrl).catch(() => '') : ''
-    const item: HistoryItem = {
-      id,
-      at: Date.now(),
-      thumb,
-      gray: encodeGray(result.trace.gray),
-      kind: result.kind,
-      y: result.y,
-      uncertain: result.uncertain,
-      name: state.file?.name ?? 'foto',
+  /** Ganti satu foto (foto ulang / pilih ulang) tanpa mengubah urutannya. */
+  replacePhoto(id: string, file: File) {
+    const old = state.photos.find((p) => p.id === id)
+    if (!old) return
+    revoke(old.url)
+    const fresh = { id: newId(), file, url: URL.createObjectURL(file) }
+    set({ photos: state.photos.map((p) => (p.id === id ? fresh : p)), activeId: fresh.id })
+  },
+
+  removePhoto(id: string) {
+    const i = state.photos.findIndex((p) => p.id === id)
+    if (i < 0) return
+    revoke(state.photos[i].url)
+    const photos = state.photos.filter((p) => p.id !== id)
+    const activeId =
+      state.activeId === id ? (photos[Math.min(i, photos.length - 1)]?.id ?? null) : state.activeId
+    set({ photos, activeId })
+  },
+
+  setActive(id: string) {
+    if (state.photos.some((p) => p.id === id)) set({ activeId: id })
+  },
+
+  clearPhotos() {
+    state.photos.forEach((p) => revoke(p.url))
+    set({ photos: [], activeId: null })
+  },
+
+  /**
+   * Simpan hasil pindaian. URL foto asli dipindahkan ke hasil (tidak dilepas),
+   * karena masih dipakai di halaman Hasil.
+   */
+  async commitResults(entries: { photo: Photo; result: Classification }[], failed: string[] = []) {
+    const thumbs = await Promise.all(entries.map((e) => makeThumb(e.photo.url).catch(() => '')))
+    const items: ScanItem[] = entries.map((e, i) => ({
+      id: e.photo.id,
+      name: e.photo.file.name || 'foto',
+      src: e.photo.url,
+      thumb: thumbs[i],
+      result: e.result,
+    }))
+    const at = Date.now()
+    const saved = {
+      at,
+      items: items.map((it) => ({
+        id: it.id,
+        name: it.name,
+        thumb: it.thumb,
+        gray: encodeGray(it.result.trace.gray),
+        y: it.result.y,
+      })),
     }
-    const history = [item, ...state.history.filter((h) => h.id !== id)].slice(0, MAX_HISTORY)
-    saveHistory(history)
-    set({ history })
+    persist(saved)
+    // Foto yang tidak ikut dikenali (gagal) dilepas; yang berhasil kini dimiliki hasil.
+    const kept = new Set(items.map((i) => i.id))
+    state.photos.forEach((p) => {
+      if (!kept.has(p.id)) revoke(p.url)
+    })
+    set({ items, scannedAt: at, failed, saved, photos: [], activeId: null })
   },
 
-  /** Tampilkan kembali hasil dari riwayat (tanpa berkas asli, memakai thumbnail). */
-  restore(item: HistoryItem, result: Classification) {
-    revoke(state.previewUrl)
-    set({ file: null, previewUrl: item.thumb || null, result, currentId: item.id })
+  /** Pulihkan hasil setelah halaman dimuat ulang (memakai thumbnail sebagai gambar). */
+  restore(results: Classification[]) {
+    const saved = state.saved
+    if (!saved || results.length !== saved.items.length) return
+    set({
+      items: saved.items.map((s, i) => ({
+        id: s.id,
+        name: s.name,
+        src: s.thumb,
+        thumb: s.thumb,
+        result: results[i],
+      })),
+      scannedAt: saved.at,
+      failed: [],
+    })
   },
 
-  clearHistory() {
-    saveHistory([])
-    set({ history: [] })
-  },
-
+  /** Hapus seluruh sesi: foto, hasil, dan salinan tersimpannya. */
   reset() {
-    revoke(state.previewUrl)
-    set({ file: null, previewUrl: null, result: null, currentId: null })
+    state.photos.forEach((p) => revoke(p.url))
+    state.items.forEach((i) => revoke(i.src))
+    persist(null)
+    set({ photos: [], activeId: null, items: [], scannedAt: null, failed: [], saved: null })
   },
 }
 
@@ -136,7 +218,8 @@ export const getClassifyState = () => state
 
 export function encodeGray(gray: Float32Array): string {
   const bytes = new Uint8Array(gray.length)
-  for (let i = 0; i < gray.length; i++) bytes[i] = Math.max(0, Math.min(255, Math.round(gray[i] * 255)))
+  for (let i = 0; i < gray.length; i++)
+    bytes[i] = Math.max(0, Math.min(255, Math.round(gray[i] * 255)))
   let s = ''
   for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i])
   return btoa(s)
@@ -149,12 +232,12 @@ export function decodeGray(b64: string): Float32Array {
   return out
 }
 
-/** Thumbnail persegi 240 px (cover) untuk riwayat dan pemulihan halaman Hasil. */
+/** Thumbnail persegi 320 px (cover) untuk daftar hasil, laporan PDF, dan pemulihan halaman Hasil. */
 async function makeThumb(url: string): Promise<string> {
   const img = new Image()
   img.src = url
   await img.decode()
-  const side = 240
+  const side = 320
   const c = document.createElement('canvas')
   c.width = side
   c.height = side
