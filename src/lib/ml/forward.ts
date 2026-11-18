@@ -68,24 +68,47 @@ export function maxPool2x2(R: Float32Array, H: number, W: number) {
   return { data: P, H: h, W: w }
 }
 
-/** Seluruh umpan maju untuk satu citra grayscale ternormalisasi (size × size). */
+/**
+ * Seluruh umpan maju untuk satu citra ternormalisasi.
+ * `I` berurutan kanal → baris → kolom (channels × size × size), sama seperti array NumPy di notebook.
+ * Untuk citra berkanal banyak, hasil konvolusi tiap kernel adalah jumlah konvolusi semua kanalnya.
+ */
 export function forward(I: Float32Array, weights: ModelWeights, meta: ModelMeta): ForwardTrace {
   const { inputSize: n, kernels: F, kernelSize: k, hidden: Hd } = meta
+  const ch = meta.channels ?? 1
   const q = (k - 1) / 2
-  const padded = zeroPad(I, n, n, q)
+  const plane = n * n
+  const padded = Array.from({ length: ch }, (_, c) =>
+    zeroPad(I.subarray(c * plane, (c + 1) * plane), n, n, q),
+  )
+  const Wp = padded[0].W
 
   const R: Float32Array[] = []
   const P: Float32Array[] = []
   const half = n >> 1
-  const x = new Float32Array(F * half * half) // flatten: kanal → baris → kolom
-  for (let c = 0; c < F; c++) {
-    const K = weights.K.subarray(c * k * k, (c + 1) * k * k)
-    const C = conv(padded.data, padded.H, padded.W, K, k, weights.bc[c])
-    const Rc = reluMap(C)
-    const pooled = maxPool2x2(Rc, n, n)
-    R.push(Rc)
+  const x = new Float32Array(F * half * half) // flatten: kernel → baris → kolom
+  for (let f = 0; f < F; f++) {
+    // Dijumlahkan dalam presisi ganda, seperti np.einsum di notebook, baru disimpan sebagai float32.
+    const acc64 = new Float64Array(plane).fill(weights.bc[f])
+    for (let c = 0; c < ch; c++) {
+      const Ip = padded[c].data
+      const K = weights.K.subarray((f * ch + c) * k * k, (f * ch + c + 1) * k * k)
+      for (let i = 0; i < n; i++) {
+        for (let j = 0; j < n; j++) {
+          let s = 0
+          for (let u = 0; u < k; u++) {
+            const rowI = (i + u) * Wp + j
+            for (let v = 0; v < k; v++) s += Ip[rowI + v] * K[u * k + v]
+          }
+          acc64[i * n + j] += s
+        }
+      }
+    }
+    const Rf = reluMap(Float32Array.from(acc64))
+    const pooled = maxPool2x2(Rf, n, n)
+    R.push(Rf)
     P.push(pooled.data)
-    x.set(pooled.data, c * half * half)
+    x.set(pooled.data, f * half * half)
   }
 
   // Hidden layer (pers. 2.3–2.4): z_in_j = v0j + Σ x_i v_ij, lalu ReLU.
@@ -103,5 +126,15 @@ export function forward(I: Float32Array, weights: ModelWeights, meta: ModelMeta)
   // Output (pers. 2.14–2.15)
   let yIn = weights.w0
   for (let j = 0; j < Hd; j++) yIn += relu(acc[j]) * weights.w[j]
-  return { size: n, gray: I, R, P, x, zin, z, yIn, y: sigmoid(yIn) }
+  return { size: n, preview: previewOf(I, n, ch), R, P, x, zin, z, yIn, y: sigmoid(yIn) }
+}
+
+/** Satu lapis untuk ditampilkan: kanal tunggal apa adanya, atau rata-rata berbobot kanal RGB. */
+function previewOf(I: Float32Array, n: number, ch: number): Float32Array {
+  if (ch === 1) return I
+  const plane = n * n
+  const out = new Float32Array(plane)
+  for (let i = 0; i < plane; i++)
+    out[i] = 0.299 * I[i] + 0.587 * I[plane + i] + 0.114 * I[2 * plane + i]
+  return out
 }

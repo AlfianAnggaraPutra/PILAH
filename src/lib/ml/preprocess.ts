@@ -1,4 +1,7 @@
-/** Prapemrosesan sesuai Bab III langkah 3: resize 64×64 → grayscale (pers. 2.1) → normalisasi (pers. 2.2). */
+/**
+ * Prapemrosesan citra: resize 64×64 → (grayscale bila modelnya satu kanal) → normalisasi /255.
+ * Sama persis dengan fungsi pengolahan citra di notebook Colab.
+ */
 
 /** Pembobotan RGB → grayscale (pers. 2.1). */
 export const toGray = (r: number, g: number, b: number) => 0.299 * r + 0.587 * g + 0.114 * b
@@ -38,7 +41,10 @@ function coeffs(inSize: number, outSize: number) {
     }
     for (let x = 0; x < ksize; x++) {
       const k = x < xmax && ww !== 0 ? pre[x] / ww : 0
-      kk[xx * ksize + x] = k < 0 ? Math.trunc(-0.5 + k * (1 << PRECISION_BITS)) : Math.trunc(0.5 + k * (1 << PRECISION_BITS))
+      kk[xx * ksize + x] =
+        k < 0
+          ? Math.trunc(-0.5 + k * (1 << PRECISION_BITS))
+          : Math.trunc(0.5 + k * (1 << PRECISION_BITS))
     }
     bounds[xx * 2] = xmin
     bounds[xx * 2 + 1] = xmax
@@ -52,7 +58,13 @@ const clip8 = (v: number) => {
 }
 
 /** Resize RGB(A) 8 bit seperti Pillow BILINEAR. `src` = RGBA dari getImageData. Hasil: RGB. */
-export function pillowResizeRGB(src: Uint8ClampedArray | Uint8Array, w: number, h: number, ow: number, oh: number) {
+export function pillowResizeRGB(
+  src: Uint8ClampedArray | Uint8Array,
+  w: number,
+  h: number,
+  ow: number,
+  oh: number,
+) {
   const H = coeffs(w, ow)
   const V = coeffs(h, oh)
   const yFirst = V.bounds[0]
@@ -145,10 +157,22 @@ export function rgbToInput(rgb: Uint8Array, roundGray = true): Float32Array {
   return out
 }
 
-/** Citra → matriks input I (size×size, nilai 0..1). */
-export function imageToInput(src: Source, size = 64, roundGray = true): Float32Array {
-  const rgba = readPixels(src)
-  return rgbToInput(pillowResizeRGB(rgba, src.width, src.height, size, size), roundGray)
+/** RGB 8 bit (piksel demi piksel) → input tiga kanal 0..1, berurutan kanal → baris → kolom seperti NumPy. */
+export function rgbToChannels(rgb: Uint8Array): Float32Array {
+  const plane = rgb.length / 3
+  const out = new Float32Array(rgb.length)
+  for (let p = 0; p < plane; p++) {
+    out[p] = rgb[p * 3] / 255
+    out[plane + p] = rgb[p * 3 + 1] / 255
+    out[2 * plane + p] = rgb[p * 3 + 2] / 255
+  }
+  return out
+}
+
+/** Citra → input model (channels × size × size, nilai 0..1). */
+export function imageToInput(src: Source, size = 64, roundGray = true, channels = 1): Float32Array {
+  const rgb = pillowResizeRGB(readPixels(src), src.width, src.height, size, size)
+  return channels === 3 ? rgbToChannels(rgb) : rgbToInput(rgb, roundGray)
 }
 
 export type MapStyle = 'gray' | 'heat' | 'diverge'
@@ -184,7 +208,8 @@ export function drawMap(
       ;[r, g, b] = heat(map[i] / max)
     } else {
       const t = map[i] / lim
-      ;[r, g, b] = t >= 0 ? mix([17, 58, 51], [255, 194, 71], t) : mix([17, 58, 51], [120, 200, 230], -t)
+      ;[r, g, b] =
+        t >= 0 ? mix([17, 58, 51], [255, 194, 71], t) : mix([17, 58, 51], [120, 200, 230], -t)
     }
     img.data[i * 4] = r
     img.data[i * 4 + 1] = g
@@ -196,7 +221,11 @@ export function drawMap(
 
 const clamp255 = (v: number) => Math.max(0, Math.min(255, Math.round(v)))
 const mix = (a: number[], b: number[], t: number) =>
-  a.map((v, i) => clamp255(v + (b[i] - v) * Math.min(1, Math.max(0, t)))) as [number, number, number]
+  a.map((v, i) => clamp255(v + (b[i] - v) * Math.min(1, Math.max(0, t)))) as [
+    number,
+    number,
+    number,
+  ]
 
 /** Rimba (0) → daun (0,55) → emas terang (1). */
 function heat(t: number): [number, number, number] {

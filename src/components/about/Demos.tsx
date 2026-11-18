@@ -144,7 +144,6 @@ export function ConvDemo() {
           </sub>{' '}
           = 0,1{terms.length ? ` + ${terms.join(' + ')}` : ''} ={' '}
           <strong>{fmt(CONV[i][j], 2)}</strong>
-          {pos === 0 && <span className="text-redup"> (sama dengan hitung manual di PPT)</span>}
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           <button
@@ -374,6 +373,7 @@ export function SigmoidDemo() {
 /* Kurva error pelatihan dari meta.json                                */
 /* ------------------------------------------------------------------ */
 
+/** Grafik rata-rata error data latih per epoch. */
 export function LossChart({ loss, epsilon }: { loss: number[]; epsilon: number }) {
   const W = 520
   const H = 200

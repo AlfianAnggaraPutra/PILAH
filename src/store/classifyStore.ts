@@ -2,7 +2,7 @@
  * Status pindaian yang dibagi antara halaman Pindai dan Hasil.
  *
  * Satu sesi = daftar foto (maksimal 20) + hasilnya. Hasil disimpan ringkas di sessionStorage
- * (thumbnail + matriks input 64×64) hanya supaya halaman Hasil tetap utuh saat dimuat ulang.
+ * (thumbnail + nilai y) hanya supaya halaman Hasil tetap utuh saat dimuat ulang.
  * Begitu pengguna meninggalkan halaman Hasil atau memulai pindaian baru (setelah konfirmasi),
  * sesi ini dihapus.
  */
@@ -27,14 +27,12 @@ export interface ScanItem {
   result: Classification
 }
 
-/** Bentuk tersimpan di sessionStorage (tanpa hasil antara CNN; dihitung ulang saat dipulihkan). */
+/** Bentuk tersimpan di sessionStorage. */
 export interface SavedItem {
   id: string
   name: string
   thumb: string
-  /** Matriks input 64×64 dikuantisasi ke 0–255 lalu base64. */
-  gray: string
-  /** Peluang anorganik saat dipindai (untuk pengecekan; hasil dihitung ulang saat dipulihkan). */
+  /** Peluang anorganik hasil model. */
   y: number
 }
 
@@ -62,7 +60,7 @@ function loadSaved(): State['saved'] {
     return data &&
       Array.isArray(data.items) &&
       data.items.length > 0 &&
-      data.items.every((i) => typeof i.gray === 'string')
+      data.items.every((i) => typeof i.y === 'number' && Number.isFinite(i.y))
       ? data
       : null
   } catch {
@@ -169,13 +167,7 @@ export const classifyActions = {
     const at = Date.now()
     const saved = {
       at,
-      items: items.map((it) => ({
-        id: it.id,
-        name: it.name,
-        thumb: it.thumb,
-        gray: encodeGray(it.result.trace.gray),
-        y: it.result.y,
-      })),
+      items: items.map((it) => ({ id: it.id, name: it.name, thumb: it.thumb, y: it.result.y })),
     }
     persist(saved)
     // Foto yang tidak ikut dikenali (gagal) dilepas; yang berhasil kini dimiliki hasil.
@@ -215,22 +207,6 @@ export const classifyActions = {
 export const getClassifyState = () => state
 
 /* ------------------------------------------------------------------ */
-
-export function encodeGray(gray: Float32Array): string {
-  const bytes = new Uint8Array(gray.length)
-  for (let i = 0; i < gray.length; i++)
-    bytes[i] = Math.max(0, Math.min(255, Math.round(gray[i] * 255)))
-  let s = ''
-  for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i])
-  return btoa(s)
-}
-
-export function decodeGray(b64: string): Float32Array {
-  const s = atob(b64)
-  const out = new Float32Array(s.length)
-  for (let i = 0; i < s.length; i++) out[i] = s.charCodeAt(i) / 255
-  return out
-}
 
 /** Thumbnail persegi 320 px (cover) untuk daftar hasil, laporan PDF, dan pemulihan halaman Hasil. */
 async function makeThumb(url: string): Promise<string> {

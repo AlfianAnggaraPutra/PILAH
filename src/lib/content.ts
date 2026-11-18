@@ -3,14 +3,51 @@
  * (mis. setelah Bab IV selesai) tanpa menyentuh tata letak.
  */
 import type { WasteKind } from './items'
+import type { ModelData, ModelMeta } from './ml/types'
 
-export const TEAM = [
-  { name: 'Alfian Anggara Putra Afandy', nim: '181231043', initials: 'AA' },
-  { name: 'Bintang Cahya Putra Gunawan', nim: '181231061', initials: 'BC' },
-] as const
+export interface Person {
+  name: string
+  role: string
+  /** Label nomor induk: NIM untuk mahasiswa, NIP untuk dosen. */
+  idLabel: 'NIM' | 'NIP'
+  id: string
+  /** Baris keterangan di bawah nomor induk. */
+  note: string
+  initials: string
+  /** Foto di folder public/tim. Bila berkasnya belum ada, kotak foto menampilkan inisial. */
+  photo: string
+}
 
-/** Isi bila ingin menampilkan dosen pembimbing di halaman Tentang. Kosong = tidak ditampilkan. */
-export const SUPERVISOR: { name: string; role: string } | null = null
+export const TEAM: Person[] = [
+  {
+    name: 'Alfian Anggara Putra Afandy',
+    role: 'Pengembang',
+    idLabel: 'NIM',
+    id: '181231043',
+    note: 'S-1 Matematika',
+    initials: 'AA',
+    photo: '/tim/alfian.jpg',
+  },
+  {
+    name: 'Bintang Cahya Putra Gunawan',
+    role: 'Pengembang',
+    idLabel: 'NIM',
+    id: '181231061',
+    note: 'S-1 Matematika',
+    initials: 'BC',
+    photo: '/tim/bintang.jpg',
+  },
+]
+
+export const SUPERVISOR: Person = {
+  name: 'Auli Damayanti, S.Si., M.Si.',
+  role: 'Dosen pembimbing',
+  idLabel: 'NIP',
+  id: '197511072003122004',
+  note: 'Departemen Matematika',
+  initials: 'AD',
+  photo: '/tim/dosen.jpg',
+}
 
 export const PROJECT_LABEL = 'Project Jaringan Syaraf Tiruan'
 
@@ -87,6 +124,96 @@ export const GUIDE: Record<
   },
 }
 
+/**
+ * Panduan penanganan umum per jenis sampah, untuk halaman Hasil dan laporan PDF.
+ * Berlaku untuk seluruh sampah dalam kelompok itu, bukan hanya benda di foto.
+ */
+export const HANDLING: Record<
+  WasteKind,
+  {
+    intro: string
+    examples: string[]
+    steps: { title: string; text: string }[]
+    avoid: string
+    becomes: string[]
+  }
+> = {
+  organik: {
+    intro:
+      'Sampah organik berasal dari sisa makhluk hidup dan mudah membusuk. Bila ditangani dengan benar, sampah ini bisa kembali ke tanah sebagai pupuk.',
+    examples: [
+      'Sisa makanan',
+      'Kulit buah',
+      'Sayuran layu',
+      'Daun dan ranting',
+      'Ampas kopi dan teh',
+      'Cangkang telur',
+    ],
+    steps: [
+      {
+        title: 'Pisahkan sejak awal',
+        text: 'Sediakan wadah khusus organik agar tidak tercampur plastik, kertas, atau kaca.',
+      },
+      {
+        title: 'Tiriskan',
+        text: 'Buang kuah, minyak, dan air sisa makanan supaya tidak cepat berbau dan mengundang lalat.',
+      },
+      {
+        title: 'Simpan tertutup',
+        text: 'Gunakan wadah bertutup, lalu olah atau buang paling lambat 1–2 hari.',
+      },
+      {
+        title: 'Olah jadi kompos',
+        text: 'Masukkan ke komposter, lubang biopori, atau keranjang Takakura. Bisa juga untuk pakan maggot.',
+      },
+      {
+        title: 'Serahkan bila tak sempat',
+        text: 'Berikan ke petugas sampah dalam kantong terpisah atau ke TPS3R terdekat.',
+      },
+    ],
+    avoid:
+      'Jangan dibakar atau dibuang ke selokan dan sungai, dan jangan dicampur plastik karena komposnya jadi tercemar.',
+    becomes: ['Kompos', 'Pupuk cair', 'Pakan maggot', 'Biogas'],
+  },
+  anorganik: {
+    intro:
+      'Sampah anorganik berasal dari bahan olahan industri dan butuh puluhan sampai ratusan tahun untuk terurai. Kebanyakan masih bernilai bila dipilah dan dalam keadaan bersih.',
+    examples: [
+      'Botol dan gelas plastik',
+      'Kaleng minuman',
+      'Kardus',
+      'Kertas dan koran',
+      'Botol kaca',
+      'Kantong plastik',
+    ],
+    steps: [
+      {
+        title: 'Kosongkan dan bilas',
+        text: 'Habiskan isinya lalu bilas singkat agar tidak bau dan tidak mengundang semut.',
+      },
+      {
+        title: 'Keringkan',
+        text: 'Kertas dan kardus yang basah atau berminyak sulit didaur ulang, jadi simpan dalam keadaan kering.',
+      },
+      {
+        title: 'Pipihkan',
+        text: 'Remas botol, kaleng, dan kardus supaya hemat tempat saat dikumpulkan.',
+      },
+      {
+        title: 'Pilah per bahan',
+        text: 'Kelompokkan plastik, kertas dan kardus, logam, serta kaca dalam wadah atau karung berbeda.',
+      },
+      {
+        title: 'Setorkan',
+        text: 'Bawa ke bank sampah, pengepul, atau titik daur ulang. Wadah yang masih bagus bisa dipakai ulang.',
+      },
+    ],
+    avoid:
+      'Jangan dibakar karena asapnya beracun. Bungkus pecahan kaca dengan kertas tebal sebelum dibuang agar petugas tidak terluka.',
+    becomes: ['Bahan baku daur ulang', 'Kerajinan', 'Barang pakai ulang', 'Tabungan bank sampah'],
+  },
+}
+
 /** Jenis sampah yang di luar dua kelas model. Ditulis jujur agar pengguna tidak salah buang. */
 export const OUT_OF_SCOPE =
   'Baterai, lampu, obat kedaluwarsa, dan kemasan pestisida termasuk sampah B3. Popok dan tisu bekas biasanya masuk residu. PILAH hanya mengenal organik dan anorganik, jadi untuk benda-benda ini ikuti aturan pengelolaan sampah di daerahmu.'
@@ -136,9 +263,28 @@ export const DATASET = {
   total: 25077,
   organik: 13966,
   anorganik: 11111,
-  used: 2000,
-  train: 1600,
-  test: 400,
+  /** Nilai bawaan sesuai notebook terbaru; angka sebenarnya dibaca dari meta.json bila ada. */
+  perClass: 11111,
+  used: 22222,
+  train: 17776,
+  test: 4446,
+}
+
+/**
+ * Pembagian data yang benar-benar dipakai model terpasang.
+ * Urutan sumber: meta.data (notebook baru) → ukuran latih/uji di meta (notebook lama) → nilai bawaan.
+ */
+export function dataSplit(meta?: ModelMeta | null): ModelData {
+  if (meta?.data) {
+    const { perClass, used, train, test } = meta.data
+    return { perClass, used, train, test }
+  }
+  const train = meta?.training?.trainSize
+  const test = meta?.metrics?.testSize
+  if (train && test)
+    return { perClass: Math.round((train + test) / 2), used: train + test, train, test }
+  const { perClass, used, train: t, test: u } = DATASET
+  return { perClass, used, train: t, test: u }
 }
 
 /** Rantai ukuran data dari input sampai output (Gambar 3.2). */

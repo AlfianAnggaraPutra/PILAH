@@ -20,14 +20,18 @@ export const DEFAULT_META: ModelMeta = {
   hidden: 16,
   flatten: 'channel-major',
   grayRound: true,
+  channels: 1,
   threshold: 0.5,
   uncertainBand: 0.1,
 }
 
+/** Banyak bobot kernel: kernel × kanal × k × k. */
+const kernelFloats = (m: ModelMeta) => m.kernels * (m.channels ?? 1) * m.kernelSize ** 2
+
 /** Jumlah float32 di model.bin: K, bc, V, v0, w, w0. Lihat docs/MODEL-FORMAT.md. */
 export function expectedFloats(m: ModelMeta) {
   const flat = m.kernels * (m.inputSize / 2) ** 2
-  return m.kernels * m.kernelSize ** 2 + m.kernels + flat * m.hidden + m.hidden + m.hidden + 1
+  return kernelFloats(m) + m.kernels + flat * m.hidden + m.hidden + m.hidden + 1
 }
 
 export function parseWeights(buf: ArrayBuffer, m: ModelMeta): ModelWeights {
@@ -41,7 +45,7 @@ export function parseWeights(buf: ArrayBuffer, m: ModelMeta): ModelWeights {
   const flat = m.kernels * (m.inputSize / 2) ** 2
   let o = 0
   const take = (n: number) => f.subarray(o, (o += n))
-  const K = take(m.kernels * m.kernelSize ** 2)
+  const K = take(kernelFloats(m))
   const bc = take(m.kernels)
   const V = take(flat * m.hidden)
   const v0 = take(m.hidden)
@@ -57,7 +61,7 @@ function mockWeights(m: ModelMeta): ModelWeights {
   const fill = (n: number, scale: number) => Float32Array.from({ length: n }, () => rnd() * scale)
   const flat = m.kernels * (m.inputSize / 2) ** 2
   return {
-    K: fill(m.kernels * m.kernelSize ** 2, 0.6),
+    K: fill(kernelFloats(m), 0.6),
     bc: fill(m.kernels, 0.1),
     V: fill(flat * m.hidden, Math.sqrt(6 / flat)),
     v0: fill(m.hidden, 0.05),

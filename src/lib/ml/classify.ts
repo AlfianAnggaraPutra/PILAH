@@ -10,7 +10,8 @@ export interface Classification {
   /** Peluang kelas yang diprediksi (0,5–1). */
   confidence: number
   uncertain: boolean
-  trace: ForwardTrace
+  /** Hasil antara CNN; tidak ada bila hasil dipulihkan dari salinan tersimpan. */
+  trace?: ForwardTrace
   meta: ModelMeta
   isMock: boolean
   ms: number
@@ -63,7 +64,7 @@ export function interpret(y: number, meta: ModelMeta) {
   return { kind, confidence, uncertain }
 }
 
-/** Foto → klasifikasi lengkap beserta seluruh hasil antara (untuk panel "proses"). */
+/** Foto → klasifikasi lengkap beserta hasil antara (untuk animasi saat foto dikenali). */
 export async function classifyImage(file: Blob): Promise<Classification> {
   const [model, bitmap] = await Promise.all([loadModel(), decodeImage(file)])
   const width = bitmap.width
@@ -76,7 +77,7 @@ export async function classifyImage(file: Blob): Promise<Classification> {
   }
   const t0 = performance.now()
   const size = model.meta.inputSize
-  const input = imageToInput(bitmap, size, model.meta.grayRound)
+  const input = imageToInput(bitmap, size, model.meta.grayRound, model.meta.channels ?? 1)
   if ('close' in bitmap) bitmap.close()
   const trace = forward(input, model.weights, model.meta)
   return {
@@ -90,17 +91,8 @@ export async function classifyImage(file: Blob): Promise<Classification> {
   }
 }
 
-/** Hitung ulang dari matriks input yang disimpan (dipakai saat halaman hasil dimuat ulang). */
-export async function classifyInput(input: Float32Array): Promise<Classification> {
+/** Hasil dari nilai y yang disimpan (dipakai saat halaman hasil dimuat ulang). */
+export async function classificationFromY(y: number): Promise<Classification> {
   const model = await loadModel()
-  const t0 = performance.now()
-  const trace = forward(input, model.weights, model.meta)
-  return {
-    y: trace.y,
-    ...interpret(trace.y, model.meta),
-    trace,
-    meta: model.meta,
-    isMock: model.isMock,
-    ms: performance.now() - t0,
-  }
+  return { y, ...interpret(y, model.meta), meta: model.meta, isMock: model.isMock, ms: 0 }
 }

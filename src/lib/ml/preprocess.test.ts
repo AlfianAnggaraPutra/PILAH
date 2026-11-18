@@ -5,7 +5,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { pillowResizeRGB, rgbToInput } from './preprocess'
+import { pillowResizeRGB, rgbToChannels, rgbToInput } from './preprocess'
 
 const fx = JSON.parse(
   readFileSync(join(process.cwd(), 'src/lib/ml/__fixtures__/pillow-resize.json'), 'utf8'),
@@ -33,5 +33,10 @@ describe(`resize sama persis dengan Pillow ${fx.pillow}`, () => {
     const I = rgbToInput(Uint8Array.from([200, 150, 100, 1, 1, 0]))
     expect(Math.round(I[0] * 255)).toBe(159)
     expect(Math.round(I[1] * 255)).toBe(1)
+  })
+
+  it('input RGB disusun kanal → baris → kolom seperti array NumPy (3, 64, 64)', () => {
+    const I = rgbToChannels(Uint8Array.from([255, 0, 51, 0, 102, 255]))
+    expect(Array.from(I).map((v) => Math.round(v * 255))).toEqual([255, 0, 0, 102, 51, 255])
   })
 })

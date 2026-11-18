@@ -1,18 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { BatchSummary } from '@/components/result/BatchSummary'
-import { ProcessExplorer } from '@/components/result/ProcessExplorer'
 import { SortReveal } from '@/components/result/SortReveal'
 import { Button, ButtonLink } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { Icon, type IconName } from '@/components/ui/Icon'
 import { Reveal } from '@/components/ui/Reveal'
 import { tally, verdictOf, VERDICT_LABEL } from '@/lib/advice'
-import { GUIDE } from '@/lib/content'
-import { classifyInput } from '@/lib/ml/classify'
+import { HANDLING, OUT_OF_SCOPE } from '@/lib/content'
+import { classificationFromY } from '@/lib/ml/classify'
 import { prefersReducedMotion, useCountUp } from '@/lib/motion'
 import { useBlocker, useLocation, useNavigate } from '@/lib/router'
 import { cn, fmt } from '@/lib/utils'
-import { classifyActions, decodeGray, useClassifyStore, type ScanItem } from '@/store/classifyStore'
+import { classifyActions, useClassifyStore, type ScanItem } from '@/store/classifyStore'
 
 const delay = (ms: number) => ({ '--tunda': `${ms}ms` }) as CSSProperties
 
@@ -138,7 +137,7 @@ interface BatchNav {
   onNext: () => void
 }
 
-/** Rincian hasil satu foto: keputusan, keyakinan, saran, dan penelusuran perhitungan CNN. */
+/** Rincian hasil satu foto: keputusan, keyakinan, dan cara menangani sampahnya. */
 function Detail({
   item,
   batch,
@@ -148,27 +147,15 @@ function Detail({
   batch?: BatchNav
   onRescan: () => void
 }) {
-  const [showProcess, setShowProcess] = useState(false)
-  /** true saat dibuka lewat tombol "Lihat perhitungan": panel langsung terbuka penuh agar bisa digulir tepat ke sana. */
-  const [jump, setJump] = useState(false)
-
-  const openProcess = useCallback(() => {
-    setJump(true)
-    setShowProcess(true)
-    // Tunggu panel perhitungan selesai dirender (dua frame) baru gulir, supaya posisinya sudah final.
-    requestAnimationFrame(() =>
-      requestAnimationFrame(() =>
-        document.getElementById('perhitungan')?.scrollIntoView({
-          behavior: prefersReducedMotion() ? 'auto' : 'smooth',
-          block: 'start',
-        }),
-      ),
-    )
+  const toHandling = useCallback(() => {
+    document
+      .getElementById('penanganan')
+      ?.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' })
   }, [])
 
   const result = item.result
   const { kind, confidence, uncertain, y, isMock } = result
-  const g = GUIDE[kind]
+  const h = HANDLING[kind]
   const org = kind === 'organik'
   const title = uncertain ? 'PILAH belum yakin' : org ? 'Sampah organik' : 'Sampah anorganik'
   const tone = uncertain ? 'netral' : org ? 'daun' : 'emas'
@@ -338,25 +325,37 @@ function Detail({
                 size="lg"
                 variant="secondary"
                 className="gap-1.5 px-3 max-sm:text-[0.95rem] sm:gap-2 sm:px-7"
-                onClick={openProcess}
+                onClick={toHandling}
               >
-                <Icon name="layers" size={18} /> Lihat perhitungan
+                <Icon name="arrowDown" size={18} />{' '}
+                {uncertain ? 'Tips foto ulang' : 'Cara menangani'}
               </Button>
             </div>
           </div>
         </section>
 
-        <div className="mt-6 grid gap-6 md:grid-cols-[1.2fr_1fr]">
+        <section
+          id="penanganan"
+          aria-labelledby="judul-penanganan"
+          className="mt-6 grid gap-6 lg:grid-cols-[1.35fr_1fr]"
+        >
           <Reveal gaya="naik" className="h-full">
             {uncertain ? (
-              <div className="kartu h-full rounded-4xl p-7">
-                <h2 className="font-display flex items-center gap-2.5 text-lg font-semibold">
-                  <Icon name="camera" size={20} className="text-emas" /> Coba foto ulang seperti ini
+              <div className="kartu h-full rounded-4xl p-7 sm:p-8">
+                <h2
+                  id="judul-penanganan"
+                  className="font-display flex items-center gap-2.5 text-xl font-semibold"
+                >
+                  <Icon name="camera" size={21} className="text-emas" /> Coba foto ulang seperti ini
                 </h2>
-                <ul className="mt-5 space-y-3">
+                <p className="text-redup mt-2 leading-relaxed">
+                  Foto yang jelas membantu PILAH membedakan organik dan anorganik dengan lebih
+                  yakin.
+                </p>
+                <ul className="mt-6 space-y-3">
                   {RETAKE_TIPS.map((t) => (
-                    <li key={t.text} className="group flex gap-3">
-                      <span className="text-emas grid size-9 shrink-0 place-items-center rounded-xl bg-white/[0.07] transition-transform duration-300 group-hover:-rotate-6">
+                    <li key={t.text} className="flex gap-3">
+                      <span className="text-emas grid size-9 shrink-0 place-items-center rounded-xl bg-white/[0.07]">
                         <Icon name={t.icon} size={17} />
                       </span>
                       <span className="text-mint-teks/90 pt-1.5 leading-relaxed">{t.text}</span>
@@ -366,103 +365,125 @@ function Detail({
               </div>
             ) : (
               <div
-                className={cn('kartu h-full rounded-4xl p-7', org ? 'bg-mint/40' : 'bg-krem/40')}
+                className={cn(
+                  'kartu h-full rounded-4xl p-7 sm:p-8',
+                  org ? 'bg-mint/40' : 'bg-krem/40',
+                )}
               >
-                <h2 className="font-display flex items-center gap-2.5 text-lg font-semibold">
+                <h2
+                  id="judul-penanganan"
+                  className="font-display flex items-center gap-2.5 text-xl font-semibold"
+                >
                   <Icon
                     name={org ? 'leaf' : 'recycle'}
-                    size={20}
+                    size={21}
                     className={org ? 'text-daun-terang' : 'text-emas'}
                   />
-                  Yang sebaiknya kamu lakukan
+                  Cara menangani sampah {kind}
                 </h2>
-                <ol className="mt-5 space-y-3.5">
-                  {g.steps.map((s, i) => (
-                    <li key={s} className="group flex gap-3">
+                <p className="text-mint-teks/85 mt-2 max-w-2xl leading-relaxed">{h.intro}</p>
+                <ol
+                  className="mt-6 grid gap-x-6 gap-y-4 sm:grid-cols-2"
+                  data-testid="handling-steps"
+                >
+                  {h.steps.map((s, i) => (
+                    <li
+                      key={s.title}
+                      className={cn(
+                        'flex gap-3',
+                        i === h.steps.length - 1 && h.steps.length % 2 === 1 && 'sm:col-span-2',
+                      )}
+                    >
                       <span
                         className={cn(
-                          'font-display grid size-7 shrink-0 place-items-center rounded-full text-xs font-bold transition-transform duration-300 group-hover:scale-110',
-                          org ? 'bg-daun text-rimba-950' : 'bg-emas text-rimba-950',
+                          'font-display text-rimba-950 grid size-8 shrink-0 place-items-center rounded-full text-sm font-bold',
+                          org ? 'bg-daun' : 'bg-emas',
                         )}
                       >
                         {i + 1}
                       </span>
-                      <span className="text-mint-teks/90 pt-0.5 leading-relaxed">{s}</span>
+                      <span className="leading-relaxed">
+                        <span className="block font-semibold text-white">{s.title}</span>
+                        <span className="text-mint-teks/85">{s.text}</span>
+                      </span>
                     </li>
                   ))}
                 </ol>
-                <p className="mt-6 inline-flex items-center gap-2 rounded-full bg-white/8 px-4 py-2 text-sm text-white ring-1 ring-white/10">
-                  Bisa diolah menjadi: {g.becomes.toLowerCase()}
+                <p className="bg-rimba-950/40 text-mint-teks/90 mt-6 flex gap-2.5 rounded-2xl p-4 text-sm leading-relaxed ring-1 ring-white/10">
+                  <Icon name="alert" size={17} className="text-emas mt-0.5 shrink-0" />
+                  {h.avoid}
                 </p>
               </div>
             )}
           </Reveal>
-          <Reveal gaya="naik" delay={120} className="h-full">
-            <div className="kartu h-full rounded-4xl p-7">
-              <h2 className="font-display flex items-center gap-2.5 text-lg font-semibold">
-                <Icon name="info" size={20} className="text-daun-terang" /> Tentang hasil ini
-              </h2>
-              <p className="text-redup mt-4 leading-relaxed">
-                PILAH menebak dari pola bentuk dan tekstur di foto, bukan dari pemeriksaan bahan.
-                Kalau masih ragu, lihat bahannya: dari makhluk hidup berarti organik, sedangkan
-                plastik, logam, kaca, atau kertas olahan berarti anorganik.
-              </p>
-              <button
-                type="button"
-                onClick={openProcess}
-                className="group text-emas hover:text-emas-terang mt-6 inline-flex items-center gap-2 text-sm font-semibold transition-colors"
-              >
-                Lihat cara PILAH menghitungnya
-                <Icon
-                  name="arrowDown"
-                  size={16}
-                  className="transition-transform duration-300 group-hover:translate-y-0.5"
-                />
-              </button>
-            </div>
-          </Reveal>
-        </div>
 
-        <div id="perhitungan" className="mt-10">
-          <button
-            type="button"
-            aria-expanded={showProcess}
-            aria-controls="proses"
-            onClick={() => {
-              setJump(false)
-              setShowProcess((s) => !s)
-            }}
-            className="group flex w-full items-center justify-between gap-4 rounded-3xl border border-white/10 bg-white/3 px-6 py-5 text-left transition-colors hover:bg-white/6"
-          >
-            <span>
-              <span className="font-display block text-lg font-semibold text-white">
-                Penasaran cara PILAH sampai ke jawaban ini?
-              </span>
-              <span className="text-redup mt-1 block text-sm">
-                Telusuri enam langkah perhitungan CNN untuk fotomu, dari piksel sampai keputusan.
-              </span>
-            </span>
-            <span
-              className={cn(
-                'grid size-10 shrink-0 place-items-center rounded-full bg-white/8 transition-transform duration-500',
-                showProcess && 'bg-emas text-rimba-950 rotate-180',
+          <div className="grid content-start gap-6">
+            <Reveal gaya="naik" delay={100}>
+              {uncertain ? (
+                <div className="kartu rounded-4xl p-7">
+                  <h3 className="font-display flex items-center gap-2.5 text-lg font-semibold">
+                    <Icon name="check" size={20} className="text-daun-terang" /> Cara memastikan
+                    sendiri
+                  </h3>
+                  <ul className="text-mint-teks/90 mt-4 space-y-3 leading-relaxed">
+                    <li>
+                      <span className="text-daun-terang font-semibold">Organik</span> bila berasal
+                      dari makhluk hidup dan bisa membusuk, misalnya sisa makanan, kulit buah, atau
+                      daun.
+                    </li>
+                    <li>
+                      <span className="text-emas-terang font-semibold">Anorganik</span> bila terbuat
+                      dari plastik, logam, kaca, atau kertas olahan, misalnya botol, kaleng, dan
+                      kardus.
+                    </li>
+                  </ul>
+                </div>
+              ) : (
+                <div className="kartu rounded-4xl p-7">
+                  <h3 className="font-display text-lg font-semibold">
+                    Yang termasuk sampah {kind}
+                  </h3>
+                  <ul className="mt-4 flex flex-wrap gap-2">
+                    {h.examples.map((e) => (
+                      <li
+                        key={e}
+                        className="text-mint-teks rounded-full bg-white/7 px-3.5 py-1.5 text-sm ring-1 ring-white/10"
+                      >
+                        {e}
+                      </li>
+                    ))}
+                  </ul>
+                  <h3 className="font-display mt-6 text-lg font-semibold">Bisa diolah menjadi</h3>
+                  <ul className="mt-4 flex flex-wrap gap-2">
+                    {h.becomes.map((e) => (
+                      <li
+                        key={e}
+                        className={cn(
+                          'text-rimba-950 rounded-full px-3.5 py-1.5 text-sm font-semibold',
+                          org ? 'bg-daun-terang' : 'bg-emas-terang',
+                        )}
+                      >
+                        {e}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               )}
-            >
-              <Icon name="chevronDown" size={20} />
-            </span>
-          </button>
-          <div
-            className={cn(
-              'ease-keluar grid duration-700',
-              jump ? 'transition-opacity' : 'transition-[grid-template-rows,opacity]',
-              showProcess ? 'mt-4 grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0',
-            )}
-          >
-            <div className="overflow-hidden">
-              {showProcess && <ProcessExplorer result={result} />}
-            </div>
+            </Reveal>
+            <Reveal gaya="naik" delay={180}>
+              <div className="kartu rounded-4xl p-7">
+                <h3 className="font-display flex items-center gap-2.5 text-lg font-semibold">
+                  <Icon name="info" size={20} className="text-daun-terang" /> Tentang hasil ini
+                </h3>
+                <p className="text-redup mt-3 leading-relaxed">
+                  PILAH menebak dari pola warna, bentuk, dan tekstur di foto, bukan dari pemeriksaan
+                  bahan. Bila hasilnya terasa janggal, percayai bahannya.
+                </p>
+                <p className="text-redup mt-3 text-sm leading-relaxed">{OUT_OF_SCOPE}</p>
+              </div>
+            </Reveal>
           </div>
-        </div>
+        </section>
       </div>
     </div>
   )
@@ -480,11 +501,11 @@ export default function Result() {
   const [lastViewed, setLastViewed] = useState<string | null>(null)
   const openedFromSummary = useRef(false)
 
-  // Halaman dimuat ulang: pulihkan hasil sesi ini dari salinan tersimpan dan hitung ulang semuanya.
+  // Halaman dimuat ulang: pulihkan hasil sesi ini dari salinan tersimpan.
   useEffect(() => {
     if (items.length > 0 || !saved) return
     let dead = false
-    Promise.all(saved.items.map((s) => classifyInput(decodeGray(s.gray))))
+    Promise.all(saved.items.map((s) => classificationFromY(s.y)))
       .then((res) => !dead && classifyActions.restore(res))
       .catch(() => undefined)
       .finally(() => !dead && setRestoring(false))
@@ -608,7 +629,7 @@ export default function Result() {
             : 'Hasil ini akan dihapus dan diganti dengan pindaian berikutnya. Pastikan kamu sudah mencatat jenis sampah dan cara membuangnya.'
           : many
             ? `Hasil ${t.total} foto ini tidak disimpan. Setelah berpindah halaman, hasil dan rinciannya tidak bisa dibuka lagi. Jika ingin menyimpannya, unduh laporan PDF terlebih dahulu.`
-            : 'Hasil pindaian tidak disimpan. Setelah berpindah halaman, hasil dan rincian perhitungannya tidak bisa dibuka lagi. Pastikan kamu sudah membaca semua informasinya.'}
+            : 'Hasil pindaian tidak disimpan. Setelah berpindah halaman, hasil dan cara penanganannya tidak bisa dibuka lagi. Pastikan kamu sudah membaca semua informasinya.'}
       </ConfirmDialog>
     </>
   )

@@ -53,7 +53,9 @@ sendiri supaya bundel kecil dan tidak terganggu perubahan versi pustaka.
    - isi folder `model/` → `public/model/` (`model.bin`, `meta.json`, `golden.json`)
    - isi folder `samples/` → `public/samples/` (foto contoh + `manifest.json`)
 3. Jalankan `npm test`. Tes **golden** otomatis aktif dan memastikan nilai y di web sama dengan notebook.
-4. `npm run dev` untuk mencoba. Angka evaluasi dan kurva error di halaman Tentang terisi dari `meta.json`.
+4. `npm run dev` untuk mencoba. Angka evaluasi, kurva error, dan jumlah data latih/uji di halaman Tentang
+   semuanya terisi dari `meta.json`, jadi tidak ada angka yang perlu diubah manual bila notebook dijalankan
+   ulang dengan pengaturan lain.
 
 Detail format dan alasan teknisnya ada di `docs/MODEL-FORMAT.md`.
 
@@ -90,7 +92,8 @@ pilah-web/
 ├── public/
 │   ├── brand/          logo dan tong (SVG)
 │   ├── model/          model.bin, meta.json, golden.json (dari Colab)
-│   └── samples/        foto contoh + manifest.json (dari Colab)
+│   ├── samples/        foto contoh + manifest.json (dari Colab)
+│   └── tim/            foto tim untuk halaman Tentang: alfian.jpg, bintang.jpg, dosen.jpg
 └── src/
     ├── assets/items/   10 ikon sampah 3D (WebP)
     ├── components/
@@ -114,4 +117,6 @@ pilah-web/
     └── store/
 ```
 
-Untuk menampilkan dosen pembimbing di halaman Tentang, isi `SUPERVISOR` di `src/lib/content.ts`.
+Nama, NIM/NIP, dan dosen pembimbing di halaman Tentang ada di `TEAM` dan `SUPERVISOR` di
+`src/lib/content.ts`. Fotonya cukup ditaruh di `public/tim/` dengan nama `alfian.jpg`, `bintang.jpg`, dan
+`dosen.jpg`. Selama foto belum ada, kotaknya menampilkan inisial.

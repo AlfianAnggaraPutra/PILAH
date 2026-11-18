@@ -9,16 +9,28 @@ export interface ModelMeta {
   flatten: 'channel-major'
   /** true jika saat training nilai grayscale dibulatkan ke bilangan bulat sebelum dibagi 255. */
   grayRound: boolean
+  /** Banyak kanal citra masukan: 1 = grayscale, 3 = RGB. Model lama tanpa kolom ini = 1. */
+  channels?: number
   threshold: number // 0.5 → y ≥ threshold = anorganik
   /** Rentang |y − threshold| yang dianggap "kurang yakin". */
   uncertainBand?: number
   metrics?: ModelMetrics
   training?: ModelTraining
+  /** Banyak citra yang dipakai notebook (versi lama belum mengekspor ini). */
+  data?: ModelData
   trainedAt?: string
 }
 
+/** Pembagian data di notebook Colab. */
+export interface ModelData {
+  perClass: number
+  used: number
+  train: number
+  test: number
+}
+
 export interface ModelWeights {
-  K: Float32Array // [kernel][u][v]
+  K: Float32Array // [kernel][kanal][u][v]
   bc: Float32Array // [kernel]
   V: Float32Array // [i][j], i = indeks flatten, j = hidden
   v0: Float32Array // [hidden]
@@ -33,10 +45,11 @@ export interface LoadedModel {
   isMock: boolean
 }
 
-/** Hasil antara umpan maju — dipakai untuk visualisasi "Lihat proses". */
+/** Hasil antara umpan maju — dipakai untuk animasi saat foto dikenali. */
 export interface ForwardTrace {
   size: number
-  gray: Float32Array // matriks input I (setelah normalisasi)
+  /** Pratinjau citra masukan satu lapis (size × size, 0..1) untuk ditampilkan. */
+  preview: Float32Array
   R: Float32Array[] // feature map setelah ReLU, per kernel (size × size)
   P: Float32Array[] // hasil max pooling, per kernel (size/2 × size/2)
   x: Float32Array // vektor flatten
@@ -67,6 +80,12 @@ export interface ModelTraining {
   epsilon: number
   eMax: number
   seconds?: number
+  /** Kekuatan regularisasi L2 pada bobot hidden layer. */
+  l2?: number
+  /** true bila citra latih dibalik horizontal secara acak. */
+  flip?: boolean
+  /** Faktor pengali learning rate setiap epoch (bila learning rate dikecilkan bertahap). */
+  alphaDecay?: number
   lossHistory?: number[]
   accHistory?: number[]
 }

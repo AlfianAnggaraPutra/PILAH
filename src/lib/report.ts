@@ -15,7 +15,7 @@ import {
   LOW_CONFIDENCE,
   type Verdict,
 } from '@/lib/advice'
-import { GUIDE, OUT_OF_SCOPE } from '@/lib/content'
+import { HANDLING, OUT_OF_SCOPE } from '@/lib/content'
 import { fmt } from '@/lib/utils'
 import type { ScanItem } from '@/store/classifyStore'
 
@@ -335,7 +335,7 @@ export async function buildReport(
       `${t.total} foto berhasil dikenali${failed.length ? `, ${failed.length} foto gagal diproses` : ''}`,
     ],
     ['Nomor laporan', no],
-    ['Metode', 'CNN, citra masukan 64 × 64 piksel grayscale'],
+    ['Metode', 'Convolutional Neural Network (CNN)'],
     [
       'Status model',
       isMock ? 'Mode demo (model hasil pelatihan belum dipasang)' : 'Model hasil pelatihan',
@@ -495,8 +495,8 @@ export async function buildReport(
     guides.push({
       title: `Sampah ${k} (${t[k]} foto)`,
       color: TONE[k],
-      lines: GUIDE[k].steps,
-      foot: `Dapat diolah menjadi: ${GUIDE[k].becomes.toLowerCase()}.`,
+      lines: HANDLING[k].steps.map((st) => `${st.title}: ${st.text}`),
+      foot: `Dapat diolah menjadi: ${HANDLING[k].becomes.join(', ').toLowerCase()}. ${HANDLING[k].avoid}`,
     })
   })
   if (t.ragu > 0) {
@@ -512,7 +512,12 @@ export async function buildReport(
   }
   guides.forEach((g) => {
     const body = g.lines.map((l) => wrap(l, 9.5, CW - 52))
-    const h = 34 + body.reduce((a, b) => a + b.length * 14 + 4, 0) + (g.foot ? 18 : 0) + 8
+    const foot = g.foot ? wrap(g.foot, 9, CW - 36, F.it) : []
+    const h =
+      34 +
+      body.reduce((a, b) => a + b.length * 14 + 4, 0) +
+      (foot.length ? foot.length * 13 + 8 : 0) +
+      8
     ensure(h + 12)
     round(M, y, CW, h, 6, C.krem)
     rect(M, y, 3.5, h, C.emas)
@@ -523,7 +528,7 @@ export async function buildReport(
       ls.forEach((l, j) => text(l, M + 34, ty + j * 14, 9.5, F.reg, C.teks))
       ty += ls.length * 14 + 4
     })
-    if (g.foot) text(g.foot, M + 18, ty + 2, 9, F.it, C.redup)
+    foot.forEach((l, i) => text(l, M + 18, ty + 4 + i * 13, 9, F.it, C.redup))
     y += h + 12
   })
   ensure(60)
@@ -533,7 +538,7 @@ export async function buildReport(
   /* ---------------- F. Catatan penting ---------------- */
   section('F.  Catatan Penting', 60)
   const notes = [
-    'Hasil berasal dari model CNN yang membaca pola bentuk dan tekstur pada foto, bukan dari pemeriksaan bahan secara langsung.',
+    'Hasil berasal dari model CNN yang membaca pola warna, bentuk, dan tekstur pada foto, bukan dari pemeriksaan bahan secara langsung.',
     metrics
       ? `Pada data uji (${metrics.testSize} citra), akurasi model adalah ${pctText(metrics.accuracy)}.`
       : null,

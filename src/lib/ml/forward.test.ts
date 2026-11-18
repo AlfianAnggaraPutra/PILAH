@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { conv, maxPool2x2, reluMap, sigmoid, zeroPad } from './forward'
+import { conv, forward, maxPool2x2, reluMap, sigmoid, zeroPad } from './forward'
 import { toGray } from './preprocess'
 import { expectedFloats, DEFAULT_META } from './model'
 
@@ -43,5 +43,32 @@ describe('contoh hitung manual makalah', () => {
 describe('format model.bin', () => {
   it('arsitektur 64×64 → 8 kernel → 16 hidden = 131.185 float32 (≈ 0,5 MB)', () => {
     expect(expectedFloats(DEFAULT_META)).toBe(131_185)
+  })
+  it('input tiga kanal menambah bobot kernel: 131.329 float32', () => {
+    expect(expectedFloats({ ...DEFAULT_META, channels: 3 })).toBe(131_329)
+  })
+})
+
+describe('konvolusi banyak kanal', () => {
+  it('hasil tiap kernel = jumlah konvolusi semua kanal + bias', () => {
+    const meta = { ...DEFAULT_META, inputSize: 2, kernels: 1, hidden: 1, channels: 3 }
+    // Tiga kanal 2×2 bernilai konstan 0,1 / 0,2 / 0,3; kernel hanya titik tengah (1 / 2 / 3).
+    const I = Float32Array.from([0.1, 0.1, 0.1, 0.1, 0.2, 0.2, 0.2, 0.2, 0.3, 0.3, 0.3, 0.3])
+    const K = new Float32Array(27)
+    K[4] = 1
+    K[13] = 2
+    K[22] = 3
+    const w = {
+      K,
+      bc: Float32Array.of(0.5),
+      V: Float32Array.of(1),
+      v0: Float32Array.of(0),
+      w: Float32Array.of(1),
+      w0: 0,
+    }
+    const t = forward(I, w, meta)
+    // 0,5 + 0,1·1 + 0,2·2 + 0,3·3 = 1,9 → pooling 2×2 → x = 1,9 → z = 1,9 → y = σ(1,9)
+    expect(t.x[0]).toBeCloseTo(1.9, 5)
+    expect(t.y).toBeCloseTo(sigmoid(1.9), 6)
   })
 })

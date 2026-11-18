@@ -135,7 +135,7 @@ export function BatchSummary({
               ) : (
                 <>Jumlah sampah tiap jenis seimbang.</>
               )}{' '}
-              Ketuk salah satu foto untuk melihat rincian dan cara PILAH menghitungnya.
+              Ketuk salah satu foto untuk melihat rincian dan cara menangani sampahnya.
             </p>
             <div
               className="masuk mt-auto grid gap-3 pt-8 min-[25rem]:grid-cols-2 sm:flex sm:flex-wrap"
@@ -228,7 +228,7 @@ export function BatchSummary({
           <div>
             <h2 className="font-display text-2xl font-semibold">Rincian per foto</h2>
             <p className="text-redup mt-1 text-sm">
-              Ketuk baris untuk melihat hasil lengkap dan perhitungan CNN-nya.
+              Ketuk baris untuk melihat hasil lengkap dan cara menangani sampahnya.
             </p>
           </div>
           <div

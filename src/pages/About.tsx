@@ -7,12 +7,14 @@ import { Reveal, WordsIn } from '@/components/ui/Reveal'
 import { Tooltip } from '@/components/ui/Tooltip'
 import {
   DATASET,
+  dataSplit,
   INSTITUTION,
   PHOTOS,
   PIPELINE,
   PROJECT_LABEL,
   RESEARCH_TITLE,
   SUPERVISOR,
+  type Person,
   TEAM,
 } from '@/lib/content'
 import { loadModel } from '@/lib/ml/model'
@@ -21,6 +23,27 @@ import { trackSpotlight } from '@/lib/motion'
 import { cn, fmt } from '@/lib/utils'
 
 const delay = (ms: number) => ({ '--tunda': `${ms}ms` }) as CSSProperties
+const id = (n: number) => n.toLocaleString('id-ID')
+/** "a", "a dan b", "a, b, dan c" */
+const joinId = (xs: string[]) =>
+  xs.length < 3 ? xs.join(' dan ') : `${xs.slice(0, -1).join(', ')}, dan ${xs[xs.length - 1]}`
+
+/** meta.json model terpasang; null selama memuat atau bila website memakai bobot acak (mode demo). */
+function useTrainedMeta() {
+  const [meta, setMeta] = useState<ModelMeta | null>(null)
+  useEffect(() => {
+    let alive = true
+    loadModel()
+      .then((m) => {
+        if (alive) setMeta(m.isMock ? null : m.meta)
+      })
+      .catch(() => undefined)
+    return () => {
+      alive = false
+    }
+  }, [])
+  return meta
+}
 
 const SECTIONS = [
   { id: 'latar', label: 'Latar belakang' },
@@ -213,6 +236,15 @@ const STAGE_TEXT: Record<(typeof PIPELINE)[number]['id'], string> = {
 
 function HowItWorks() {
   const [stage, setStage] = useState<(typeof PIPELINE)[number]['id']>('conv')
+  const meta = useTrainedMeta()
+  const split = dataSplit(meta)
+  const tr = meta?.training
+  const antiOverfit = [
+    tr?.flip && 'citra latih dibalik kiri-kanan secara acak',
+    tr?.l2 && `bobot hidden layer diberi regularisasi L2 (λ = ${fmt(tr.l2, 2)})`,
+    tr?.alphaDecay &&
+      `learning rate dikecilkan bertahap (dikali ${fmt(tr.alphaDecay, 2)} setiap epoch)`,
+  ].filter((s): s is string => !!s)
   return (
     <section
       id="cara-kerja"
@@ -315,28 +347,34 @@ function HowItWorks() {
               <div>
                 <h3 className="text-2xl font-bold">Bagaimana model belajar</h3>
                 <p className="text-redup mt-3 leading-relaxed">
-                  Model dilatih dengan backpropagation dan Stochastic Gradient Descent pada 1.600
-                  citra latih. Untuk setiap citra, model menebak, menghitung error dengan Binary
-                  Cross-Entropy, lalu merambatkan error itu mundur untuk memperbaiki semua bobot dan
-                  kernel sedikit demi sedikit.
+                  Model dilatih dengan backpropagation dan Stochastic Gradient Descent pada{' '}
+                  <span className="angka">{id(split.train)}</span> citra latih. Untuk setiap citra,
+                  model menebak, menghitung error dengan Binary Cross-Entropy, lalu merambatkan
+                  error itu mundur untuk memperbaiki semua bobot dan kernel sedikit demi sedikit.
                 </p>
+                {antiOverfit.length > 0 && (
+                  <p className="text-redup mt-3 leading-relaxed" data-testid="anti-overfit">
+                    Agar model mempelajari ciri umum sampah dan tidak sekadar menghafal,{' '}
+                    {joinId(antiOverfit)}.
+                  </p>
+                )}
                 <ul className="mt-7 grid grid-cols-3 gap-2 sm:gap-3">
                   {[
                     [
                       'α',
-                      '0,01',
+                      fmt(tr?.alpha ?? 0.01, 2),
                       'learning rate',
                       'Seberapa besar langkah perbaikan bobot di setiap data.',
                     ],
                     [
                       'ε',
-                      '0,05',
+                      fmt(tr?.epsilon ?? 0.05, 2),
                       'batas error',
                       'Pelatihan berhenti bila rata-rata error sudah di bawah nilai ini.',
                     ],
                     [
                       'Eₘₐₖₛ',
-                      '50',
+                      String(tr?.eMax ?? 30),
                       'epoch maksimum',
                       'Batas berapa kali seluruh data latih diputar.',
                     ],
@@ -406,26 +444,21 @@ function Metric({ label, value, hint }: { label: string; value: number; hint: st
 }
 
 function ModelSection() {
-  const [meta, setMeta] = useState<ModelMeta | null>(null)
-  const [mock, setMock] = useState(false)
-  useEffect(() => {
-    loadModel()
-      .then((m) => {
-        setMeta(m.meta)
-        setMock(m.isMock)
-      })
-      .catch(() => undefined)
-  }, [])
-  const m = !mock ? meta?.metrics : undefined
-  const tr = !mock ? meta?.training : undefined
+  const meta = useTrainedMeta()
+  const m = meta?.metrics
+  const tr = meta?.training
+  const split = dataSplit(meta)
+  const testSize = m?.testSize ?? split.test
+  const ch = meta?.channels ?? 1
+  const convParams = 8 * ch * 9 + 8
 
   return (
     <section id="model" className="mx-auto max-w-6xl scroll-mt-12 px-5 py-16 sm:px-6 md:py-24">
       <SectionHead title="Model dan data">
         <p>
           Data diambil dari dataset {DATASET.name} di Kaggle, karya {DATASET.author}. Dari{' '}
-          {DATASET.total.toLocaleString('id-ID')} citra, kami mengambil{' '}
-          {DATASET.used.toLocaleString('id-ID')} secara acak dengan jumlah seimbang per kelas.
+          {id(DATASET.total)} citra, kami mengambil {id(split.used)} secara acak dengan jumlah
+          seimbang per kelas.
         </p>
       </SectionHead>
 
@@ -441,11 +474,17 @@ function ModelSection() {
             />
             {[
               [
-                `${DATASET.total.toLocaleString('id-ID')} citra`,
-                `${DATASET.organik.toLocaleString('id-ID')} organik, ${DATASET.anorganik.toLocaleString('id-ID')} anorganik (recyclable)`,
+                `${id(DATASET.total)} citra`,
+                `${id(DATASET.organik)} organik, ${id(DATASET.anorganik)} anorganik (recyclable)`,
               ],
-              ['2.000 citra', '1.000 per kelas diambil acak; organik t = 0, anorganik t = 1'],
-              ['1.600 latih, 400 uji', 'pembagian 80 : 20, masing-masing seimbang antarkelas'],
+              [
+                `${id(split.used)} citra`,
+                `${id(split.perClass)} per kelas diambil acak; organik t = 0, anorganik t = 1`,
+              ],
+              [
+                `${id(split.train)} latih, ${id(split.test)} uji`,
+                'pembagian 80 : 20, masing-masing seimbang antarkelas',
+              ],
             ].map(([a, b], i) => (
               <li key={a} className="relative flex gap-4">
                 <span className="bg-emas font-display text-rimba-950 ring-kartu relative grid size-8 shrink-0 place-items-center rounded-full text-sm font-bold ring-4">
@@ -487,7 +526,11 @@ function ModelSection() {
             </thead>
             <tbody className="angka">
               {[
-                ['Konvolusi 8 × (3 × 3) + ReLU', '8 × 64 × 64', '80'],
+                [
+                  `Konvolusi 8 × (${ch > 1 ? `${ch} × ` : ''}3 × 3) + ReLU`,
+                  '8 × 64 × 64',
+                  id(convParams),
+                ],
                 ['Max pooling 2 × 2', '8 × 32 × 32', '0'],
                 ['Flatten', '8.192', '0'],
                 ['Hidden 16 neuron, ReLU', '16', '131.088'],
@@ -506,7 +549,9 @@ function ModelSection() {
                 <td className="pt-3 font-semibold text-white" colSpan={2}>
                   Total
                 </td>
-                <td className="text-emas pt-3 text-right font-semibold">131.185</td>
+                <td className="text-emas pt-3 text-right font-semibold">
+                  {id(convParams + 131_088 + 17)}
+                </td>
               </tr>
             </tbody>
           </table>
@@ -516,7 +561,9 @@ function ModelSection() {
 
       <Reveal gaya="skala" className="mt-6" id="evaluasi">
         <div className="butir relative overflow-hidden rounded-4xl border border-white/10 bg-[linear-gradient(135deg,var(--color-kartu-2),var(--color-rimba-950))] p-6 sm:p-8">
-          <h3 className="font-display text-lg font-semibold">Hasil evaluasi pada 400 citra uji</h3>
+          <h3 className="font-display text-lg font-semibold">
+            Hasil evaluasi pada {id(testSize)} citra uji
+          </h3>
           {m ? (
             <>
               <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -584,8 +631,7 @@ function ModelSection() {
                 {tr?.lossHistory && tr.lossHistory.length > 1 && (
                   <div className="rounded-2xl bg-white/4 p-4 ring-1 ring-white/10">
                     <p className="mb-2 text-sm font-semibold text-white">
-                      Rata-rata error per epoch ({tr.epochs} epoch,{' '}
-                      {tr.trainSize.toLocaleString('id-ID')} citra latih)
+                      Rata-rata error per epoch ({tr.epochs} epoch, {id(tr.trainSize)} citra latih)
                     </p>
                     <LossChart loss={tr.lossHistory} epsilon={tr.epsilon} />
                   </div>
@@ -601,28 +647,92 @@ function ModelSection() {
           )}
         </div>
       </Reveal>
-
-      <Reveal gaya="naik" className="mt-6">
-        <div className="border-emas/25 bg-krem/50 rounded-4xl border p-6 sm:p-8">
-          <h3 className="font-display flex items-center gap-2 text-lg font-semibold">
-            <Icon name="alert" size={20} className="text-emas" /> Batasan yang perlu kamu tahu
-          </h3>
-          <ul className="text-mint-teks/90 mt-4 grid gap-3 text-[0.95rem] leading-relaxed sm:grid-cols-2">
-            {[
-              'Model hanya mengenal dua kelas. Sampah B3 seperti baterai atau lampu tetap akan ditebak sebagai salah satunya.',
-              'Citra diubah ke grayscale 64 × 64, jadi warna tidak ikut dipertimbangkan dan detail kecil bisa hilang.',
-              'Foto kamera ponsel bisa berbeda dari foto dataset. Latar ramai atau beberapa benda sekaligus menurunkan keyakinan.',
-              'Hasil adalah prediksi berbasis pola, bukan pemeriksaan bahan. Gunakan sebagai bantuan, bukan keputusan akhir.',
-            ].map((t) => (
-              <li key={t} className="flex gap-3">
-                <span className="bg-emas mt-2 size-1.5 shrink-0 rounded-full" />
-                {t}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </Reveal>
     </section>
+  )
+}
+
+/** Foto orang dari public/tim; inisial bila fotonya belum dipasang. */
+function PersonPhoto({ person, accent }: { person: Person; accent: 'daun' | 'emas' }) {
+  const [missing, setMissing] = useState(false)
+  return (
+    <div
+      className={cn(
+        'relative aspect-4/5 w-28 shrink-0 overflow-hidden rounded-2xl min-[25rem]:w-32 sm:w-auto sm:rounded-none',
+        accent === 'emas'
+          ? 'from-emas-terang to-emas bg-linear-to-br'
+          : 'from-daun-terang to-daun bg-linear-to-br',
+      )}
+    >
+      {missing ? (
+        <span
+          aria-hidden
+          className="font-display text-rimba-950/85 absolute inset-0 grid place-items-center text-3xl font-bold sm:text-6xl"
+        >
+          {person.initials}
+        </span>
+      ) : (
+        <img
+          src={person.photo}
+          alt={`Foto ${person.name}`}
+          loading="lazy"
+          decoding="async"
+          onError={() => setMissing(true)}
+          className="ease-keluar absolute inset-0 size-full object-cover object-top transition-transform duration-700 group-hover:scale-[1.04]"
+        />
+      )}
+      {!missing && (
+        <div
+          aria-hidden
+          className="from-rimba-950/70 absolute inset-x-0 bottom-0 h-1/3 bg-linear-to-t to-transparent"
+        />
+      )}
+      <RoleChip
+        role={person.role}
+        accent={accent}
+        className="absolute bottom-4 left-4 hidden sm:inline-block"
+      />
+    </div>
+  )
+}
+
+function RoleChip({
+  role,
+  accent,
+  className,
+}: {
+  role: string
+  accent: 'daun' | 'emas'
+  className?: string
+}) {
+  return (
+    <span
+      className={cn(
+        'font-display text-rimba-950 rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-black/10',
+        accent === 'emas' ? 'bg-emas-terang' : 'bg-daun-terang',
+        className,
+      )}
+    >
+      {role}
+    </span>
+  )
+}
+
+function PersonCard({ person, accent }: { person: Person; accent: 'daun' | 'emas' }) {
+  return (
+    <figure
+      onPointerMove={trackSpotlight}
+      className="kartu sorot group hover:shadow-angkat flex h-full items-center gap-4 overflow-hidden rounded-[1.75rem] p-3 transition-[transform,border-color,box-shadow] duration-500 hover:-translate-y-1 hover:border-white/20 sm:flex-col sm:items-stretch sm:gap-0 sm:p-0"
+    >
+      <PersonPhoto person={person} accent={accent} />
+      <figcaption className="min-w-0 py-2 pr-2 sm:p-6">
+        <RoleChip role={person.role} accent={accent} className="mb-2 inline-block sm:hidden" />
+        <p className="font-display text-lg leading-snug font-semibold text-white">{person.name}</p>
+        <p className="text-redup angka mt-1.5 text-sm">
+          {person.idLabel} {person.id}
+        </p>
+        <p className="text-redup text-sm">{person.note}</p>
+      </figcaption>
+    </figure>
   )
 }
 
@@ -634,45 +744,29 @@ function Team() {
         className="pola-titik absolute inset-0 mask-[radial-gradient(60%_60%_at_50%_40%,black,transparent)] opacity-40"
       />
       <div className="relative mx-auto max-w-6xl px-5 sm:px-6">
-        <SectionHead title="Tim pengembang">
+        <SectionHead title="Tim di balik PILAH">
           <p>
             Dibuat sebagai {PROJECT_LABEL.toLowerCase()} oleh mahasiswa {INSTITUTION.program},{' '}
             {INSTITUTION.department}, {INSTITUTION.faculty}, {INSTITUTION.university}.
           </p>
           <p className="text-redup/80 mt-2 text-base">Penelitian: “{RESEARCH_TITLE}”.</p>
         </SectionHead>
-        <div className="mt-10 grid gap-5 sm:grid-cols-2">
-          {TEAM.map((p, i) => (
-            <Reveal key={p.nim} gaya={i === 0 ? 'kiri' : 'kanan'} delay={i * 100}>
-              <div
-                onPointerMove={trackSpotlight}
-                className="kartu sorot group hover:shadow-angkat flex items-center gap-5 rounded-[1.75rem] p-6 transition-[transform,border-color,box-shadow] duration-500 hover:-translate-y-1 hover:border-white/20"
-              >
-                <span
-                  className={cn(
-                    'font-display text-rimba-950 grid size-20 shrink-0 place-items-center rounded-[1.4rem] text-2xl font-bold transition-transform duration-500 group-hover:scale-105 group-hover:-rotate-6',
-                    i === 0
-                      ? 'from-daun-terang to-daun bg-linear-to-br'
-                      : 'from-emas-terang to-emas bg-linear-to-br',
-                  )}
-                  aria-hidden
-                >
-                  {p.initials}
-                </span>
-                <div>
-                  <h3 className="font-display text-lg leading-snug font-semibold">{p.name}</h3>
-                  <p className="text-redup angka mt-1 text-sm">NIM {p.nim}</p>
-                  <p className="text-redup text-sm">{INSTITUTION.program}</p>
-                </div>
-              </div>
+        <ul className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3" data-testid="tim">
+          {[...TEAM, SUPERVISOR].map((p, i) => (
+            <Reveal
+              as="li"
+              key={p.id}
+              gaya="naik"
+              delay={i * 100}
+              className={cn(
+                i === 2 &&
+                  'sm:col-span-2 sm:mx-auto sm:w-[calc(50%-0.625rem)] lg:col-span-1 lg:mx-0 lg:w-auto',
+              )}
+            >
+              <PersonCard person={p} accent={i === 2 ? 'emas' : 'daun'} />
             </Reveal>
           ))}
-        </div>
-        {SUPERVISOR && (
-          <p className="text-redup mt-6">
-            {SUPERVISOR.role}: <span className="font-semibold text-white">{SUPERVISOR.name}</span>
-          </p>
-        )}
+        </ul>
         <div className="mt-8 grid gap-4 sm:grid-cols-3">
           {(
             [
