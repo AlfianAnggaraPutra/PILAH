@@ -93,7 +93,7 @@ pilah-web/
 │   ├── brand/          logo dan tong (SVG)
 │   ├── model/          model.bin, meta.json, golden.json (dari Colab)
 │   ├── samples/        foto contoh + manifest.json (dari Colab)
-│   └── tim/            foto tim untuk halaman Tentang: alfian.jpg, bintang.jpg, dosen.jpg
+│   └── tim/            foto tim untuk halaman Tentang: alfian.png, bintang.png, dosen.jpg
 └── src/
     ├── assets/items/   10 ikon sampah 3D (WebP)
     ├── components/
@@ -118,5 +118,5 @@ pilah-web/
 ```
 
 Nama, NIM/NIP, dan dosen pembimbing di halaman Tentang ada di `TEAM` dan `SUPERVISOR` di
-`src/lib/content.ts`. Fotonya cukup ditaruh di `public/tim/` dengan nama `alfian.jpg`, `bintang.jpg`, dan
+`src/lib/content.ts`. Fotonya cukup ditaruh di `public/tim/` dengan nama `alfian.png`, `bintang.png`, dan
 `dosen.jpg`. Selama foto belum ada, kotaknya menampilkan inisial.

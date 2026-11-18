@@ -26,7 +26,7 @@ export const TEAM: Person[] = [
     id: '181231043',
     note: 'S-1 Matematika',
     initials: 'AA',
-    photo: '/tim/alfian.jpg',
+    photo: '/tim/alfian.png',
   },
   {
     name: 'Bintang Cahya Putra Gunawan',
@@ -35,7 +35,7 @@ export const TEAM: Person[] = [
     id: '181231061',
     note: 'S-1 Matematika',
     initials: 'BC',
-    photo: '/tim/bintang.jpg',
+    photo: '/tim/bintang.png',
   },
 ]
 
